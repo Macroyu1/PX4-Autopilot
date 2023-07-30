@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2019 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2018 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,14 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
-px4_add_library(RateControl
-	rate_control.cpp
-	rate_control.hpp
-)
-target_compile_options(RateControl PRIVATE ${MAX_CUSTOM_OPT_LEVEL})
-target_include_directories(RateControl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(RateControl PRIVATE mathlib)
-target_link_libraries(RateControl PUBLIC ladrc)
-
-px4_add_unit_gtest(SRC rate_control_test.cpp LINKLIBS RateControl)
+px4_add_library(MRS MRS.cpp)
+target_compile_options(MRS PRIVATE ${MAX_CUSTOM_OPT_LEVEL})
+target_include_directories(MRS PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(MRS PRIVATE mathlib matrix)

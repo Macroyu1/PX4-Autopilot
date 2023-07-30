@@ -77,6 +77,11 @@
 #include <uORB/topics/vehicle_thrust_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/failure_detector_status.h>
+#include <uORB/topics/manual_control_setpoint.h>
+#include <uORB/topics/thrust_sp.h>
+#include <uORB/topics/torque_sp.h>
+#include <lib/MRS/MRS.h>
+#include <uORB/topics/anti_windup.h>
 
 class ControlAllocator : public ModuleBase<ControlAllocator>, public ModuleParams, public px4::ScheduledWorkItem
 {
@@ -136,6 +141,12 @@ private:
 	void publish_control_allocator_status(int matrix_index);
 
 	void publish_actuator_controls();
+	/// @brief /////////////////////////////////////////////////
+	void alloaction_onmi(const float dt);
+	void publish_anti_windup(matrix::Vector<float,6> uast);
+
+	matrix::Vector<float,6>  windup(const float* alpha,const float* omega);
+	matrix::Vector<float,12> optim(matrix::Matrix<float,12,1> x_n);
 
 	AllocationMethod _allocation_method_id{AllocationMethod::NONE};
 	ControlAllocation *_control_allocation[ActuatorEffectiveness::MAX_NUM_MATRICES] {}; 	///< class for control allocation calculations
@@ -176,12 +187,17 @@ private:
 	uORB::Subscription _vehicle_torque_setpoint1_sub{ORB_ID(vehicle_torque_setpoint), 1};  /**< vehicle torque setpoint subscription (2. instance) */
 	uORB::Subscription _vehicle_thrust_setpoint1_sub{ORB_ID(vehicle_thrust_setpoint), 1};	 /**< vehicle thrust setpoint subscription (2. instance) */
 
+	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};		/**< notification of manual control updates */
+	uORB::Subscription _thrust_sp_sub{ORB_ID(thrust_sp)};
+	uORB::Subscription _torque_sp_sub{ORB_ID(torque_sp)};
 	// Outputs
 	uORB::PublicationMulti<control_allocator_status_s> _control_allocator_status_pub[2] {ORB_ID(control_allocator_status), ORB_ID(control_allocator_status)};
 
 	uORB::Publication<actuator_motors_s>	_actuator_motors_pub{ORB_ID(actuator_motors)};
 	uORB::Publication<actuator_servos_s>	_actuator_servos_pub{ORB_ID(actuator_servos)};
 	uORB::Publication<actuator_servos_trim_s>	_actuator_servos_trim_pub{ORB_ID(actuator_servos_trim)};
+
+	uORB::Publication<anti_windup_s>	_anti_windup_pub{ORB_ID(anti_windup)};
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
@@ -190,6 +206,12 @@ private:
 
 	matrix::Vector3f _torque_sp;
 	matrix::Vector3f _thrust_sp;
+
+	//onmi
+	matrix::Vector3f _torque_sp_onmi;
+	matrix::Vector3f _thrust_sp_onmi;
+
+	manual_control_setpoint_s	_manual_control_setpoint {};	/**< manual control setpoint */
 
 	// Reflects motor failures that are currently handled, not motor failures that are reported.
 	// For example, the system might report two motor failures, but only the first one is handled by CA

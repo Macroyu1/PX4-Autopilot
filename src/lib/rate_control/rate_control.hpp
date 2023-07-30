@@ -43,6 +43,7 @@
 
 #include <mathlib/mathlib.h>
 #include <uORB/topics/rate_ctrl_status.h>
+#include<lib/ladrc/ladrc.h>
 
 class RateControl
 {
@@ -120,6 +121,7 @@ public:
 	 */
 	void getRateControlStatus(rate_ctrl_status_s &rate_ctrl_status);
 
+	matrix::Vector3f torque_update(const matrix::Quatf &q,float roll,float pitch,float yaw,const float dt);
 private:
 	void updateIntegral(matrix::Vector3f &rate_error, const float dt);
 

@@ -214,7 +214,19 @@ MulticopterRateControl::Run()
 			}
 
 			// run rate controller
-			const Vector3f att_control = _rate_control.update(rates, _rates_setpoint, angular_accel, dt, _maybe_landed || _landed);
+			//const Vector3f att_control = _rate_control.update(rates, _rates_setpoint, angular_accel, dt, _maybe_landed || _landed);
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			vehicle_attitude_setpoint_s att_sp {};
+			vehicle_attitude_s att {};
+
+			_vehicle_attitude_setpoint_sub.update(&att_sp);
+			_vehicle_attitude_sub.update(&att);
+
+			const Quatf q{att.q};
+
+			const Vector3f att_control =  _rate_control.torque_update(q, att_sp.roll_body, att_sp.pitch_body , att_sp.yaw_body , dt);
+			publishTorqueSetpoint_onmi(att_control,angular_velocity.timestamp_sample);
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			// publish rate controller status
 			rate_ctrl_status_s rate_ctrl_status{};
@@ -264,6 +276,32 @@ MulticopterRateControl::Run()
 
 	perf_end(_loop_perf);
 }
+
+void MulticopterRateControl::publishTorqueSetpoint_onmi(const matrix::Vector3f &torque_sp,const hrt_abstime &timestamp_sample)
+{
+	torque_sp_s		torque_onmi_sp {};
+	torque_onmi_sp.timestamp = hrt_absolute_time();
+	torque_onmi_sp.timestamp_sample = timestamp_sample;
+
+	torque_onmi_sp.xyz[0] = (PX4_ISFINITE(torque_sp(0))) ? torque_sp(0) : 0.0f;
+	torque_onmi_sp.xyz[1] = (PX4_ISFINITE(torque_sp(1))) ? torque_sp(1) : 0.0f;
+	torque_onmi_sp.xyz[2] = (PX4_ISFINITE(torque_sp(2))) ? torque_sp(2) : 0.0f;
+
+	_torque_sp_pub.publish(torque_onmi_sp);
+}
+
+/* void MulticopterRateControl::attitude_ctrl_onmi(const matrix::Vector3f &torque_sp,const hrt_abstime &timestamp_sample,float dt)
+{
+	vehicle_attitude_setpoint_s att_sp {};
+	vehicle_attitude_s att {};
+
+	_vehicle_attitude_setpoint_sub.update(&att_sp);
+	_vehicle_attitude_sub.update(&att);
+
+	const Quatf q{att.q};
+
+	Vector3f torque = _rate_control.torque_update(q, att_sp.roll_body, att_sp.pitch_body , att_sp.yaw_body , dt);
+} */
 
 void MulticopterRateControl::updateActuatorControlsStatus(const vehicle_torque_setpoint_s &vehicle_torque_setpoint,
 		float dt)
