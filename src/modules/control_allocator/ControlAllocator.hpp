@@ -74,6 +74,12 @@
 #include <uORB/topics/vehicle_thrust_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
 
+#include <uORB/topics/manual_control_setpoint.h>
+#include <uORB/topics/thrust_sp.h>
+#include <uORB/topics/torque_sp.h>
+#include <lib/MRS/MRS.h>
+#include <uORB/topics/anti_windup.h>
+
 class ControlAllocator : public ModuleBase<ControlAllocator>, public ModuleParams, public px4::ScheduledWorkItem
 {
 public:
@@ -131,6 +137,13 @@ private:
 
 	void publish_actuator_controls();
 
+	/// @brief /////////////////////////////////////////////////
+	void alloaction_onmi(const float dt);
+	void publish_anti_windup(matrix::Vector<float,6> uast);
+
+	matrix::Vector<float,6>  windup(const float* alpha,const float* omega);
+	matrix::Vector<float,12> optim(matrix::Matrix<float,12,1> x_n);
+
 	AllocationMethod _allocation_method_id{AllocationMethod::NONE};
 	ControlAllocation *_control_allocation[ActuatorEffectiveness::MAX_NUM_MATRICES] {}; 	///< class for control allocation calculations
 	int _num_control_allocation{0};
@@ -173,6 +186,19 @@ private:
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
+
+	/*
+	*/
+	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};		/**< notification of manual control updates */
+	uORB::Subscription _thrust_sp_sub{ORB_ID(thrust_sp)};
+	uORB::Subscription _torque_sp_sub{ORB_ID(torque_sp)};
+	uORB::Publication<anti_windup_s>	_anti_windup_pub{ORB_ID(anti_windup)};
+
+	//onmi
+	matrix::Vector3f _torque_sp_onmi;
+	matrix::Vector3f _thrust_sp_onmi;
+
+	manual_control_setpoint_s	_manual_control_setpoint {};	/**< manual control setpoint */
 
 	matrix::Vector3f _torque_sp;
 	matrix::Vector3f _thrust_sp;

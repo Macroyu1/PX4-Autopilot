@@ -26,6 +26,8 @@
 # MAV_TYPE_HEXAROTOR 13
 param set-default MAV_TYPE 13
 
+param set-default SYS_CTRL_ALLOC 1
+
 param set-default CA_ROTOR_COUNT 6
 param set-default CA_ROTOR0_PX 0.0
 param set-default CA_ROTOR0_PY 0.5
@@ -43,7 +45,8 @@ param set-default CA_ROTOR5_PX -0.43
 param set-default CA_ROTOR5_PY -0.25
 param set-default CA_ROTOR5_KM -0.05
 
-set MIXER hexa_x
-
+# set MIXER hexa_x
+set MIXER skip
+set MIXER_AUX none
 # Need to set all 8 channels
-set PWM_OUT 12345678
+set PWM_OUT 123456

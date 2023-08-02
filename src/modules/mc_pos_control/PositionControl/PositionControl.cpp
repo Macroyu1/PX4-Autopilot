@@ -121,6 +121,38 @@ bool PositionControl::update(const float dt)
 	return valid;
 }
 
+matrix::Vector3f
+PositionControl::pos_ctrl_onmi(bool arm,const float dt)
+{
+	//static Parm X = {0};static Parm Y = {0};static Parm Z = {0};
+	Vector3f thrust,pos_onmi,pos_onmi_sp;
+	// ADRC_Init(&X,1.1,0.7);
+	// thrust(0) = (ADRC_Control(&X,_pos(0),_pos_sp(0),dt));
+	// ADRC_Init(&Y,1.1,0.7);
+	// thrust(1) = (ADRC_Control(&Y,_pos(1),_pos_sp(1),dt));
+	// ADRC_Init(&Z,2.1,0.7);
+	// thrust(2) = ADRC_Saturation(-ADRC_Control(&Z,-_pos(2),-_pos_sp(2),dt),0,35);
+	// PX4_INFO("Z %f %f %f\n\n",(double)-_pos(2),(double)-_pos_sp(2),(double)thrust(2));
+	//static LADRC X(1.1,0.7);
+	//static LADRC Y(1.1,0.7);
+	static LADRC Z(5.1,0.7);
+
+	pos_onmi(2) = -_pos(2);
+	pos_onmi_sp(2) = -_pos_sp(2);
+	if(arm){
+		//thrust(0) = X.ADRC_Run(_pos(0),_pos_sp(0),dt,-10,10);
+		//thrust(1) = Y.ADRC_Run(_pos(1),_pos_sp(1),dt,-15,15);
+		thrust(2) = Z.ADRC_Run(pos_onmi(2),pos_onmi_sp(2),dt,0,30);
+		Z.ADRC_Log(1);
+	}else{
+		//thrust(0) = X.ADRC_Reset();
+		//thrust(1) = Y.ADRC_Reset();
+		thrust(2) = Z.ADRC_Reset();
+	}
+	// PX4_INFO("Z %f %f %f\n\n",(double)-_pos(2),(double)-_pos_sp(2),(double)thrust(2));
+	return thrust;
+}
+
 void PositionControl::_positionControl()
 {
 	// P-position controller

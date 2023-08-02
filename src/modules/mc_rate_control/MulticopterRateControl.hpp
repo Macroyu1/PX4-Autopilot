@@ -63,6 +63,10 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/vehicle_thrust_setpoint.h>
 #include <uORB/topics/vehicle_torque_setpoint.h>
+/////////////////////////////////////////////////////
+#include <uORB/topics/vehicle_attitude_setpoint.h>
+#include <uORB/topics/vehicle_attitude.h>
+#include <uORB/topics/torque_sp.h>
 
 using namespace time_literals;
 
@@ -96,6 +100,13 @@ private:
 	void publishTorqueSetpoint(const matrix::Vector3f &torque_sp, const hrt_abstime &timestamp_sample);
 	void publishThrustSetpoint(const hrt_abstime &timestamp_sample);
 
+	/**
+	 *
+	*/
+	void attitude_ctrl_onmi(const matrix::Vector3f &torque_sp,const hrt_abstime &timestamp_sample,float dt);
+
+	void publishTorqueSetpoint_onmi(const matrix::Vector3f &torque_sp,const hrt_abstime &timestamp_sample);
+
 	RateControl _rate_control; ///< class for rate control calculations
 
 	uORB::Subscription _battery_status_sub{ORB_ID(battery_status)};
@@ -118,6 +129,13 @@ private:
 	uORB::Publication<vehicle_rates_setpoint_s>	_v_rates_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_thrust_setpoint_s>	_vehicle_thrust_setpoint_pub{ORB_ID(vehicle_thrust_setpoint)};
 	uORB::Publication<vehicle_torque_setpoint_s>	_vehicle_torque_setpoint_pub{ORB_ID(vehicle_torque_setpoint)};
+
+	/*
+	*
+	*/
+	uORB::Subscription _vehicle_attitude_setpoint_sub{ORB_ID(vehicle_attitude_setpoint)};  /**< vehicle attitude setpoint subscription */
+	uORB::SubscriptionCallbackWorkItem _vehicle_attitude_sub{this, ORB_ID(vehicle_attitude)};
+	uORB::Publication<torque_sp_s> 		 	_torque_sp_pub{ORB_ID(torque_sp)};//torque_onmi
 
 	orb_advert_t _mavlink_log_pub{nullptr};
 

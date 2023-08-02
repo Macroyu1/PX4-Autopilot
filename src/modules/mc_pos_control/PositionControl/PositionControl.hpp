@@ -43,6 +43,7 @@
 #include <matrix/matrix/math.hpp>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
+#include <lib/ladrc/ladrc.hpp>
 
 struct PositionControlStates {
 	matrix::Vector3f position;
@@ -177,6 +178,11 @@ public:
 	 * @param attitude_setpoint reference to struct to fill up
 	 */
 	void getAttitudeSetpoint(vehicle_attitude_setpoint_s &attitude_setpoint) const;
+
+	/**
+	 *
+	*/
+	matrix::Vector3f pos_ctrl_onmi(bool arm,const float dt);
 
 private:
 	bool _inputValid();

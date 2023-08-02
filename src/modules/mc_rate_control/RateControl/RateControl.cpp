@@ -37,7 +37,7 @@
 
 #include <RateControl.hpp>
 #include <px4_platform_common/defines.h>
-
+#include <px4_platform_common/log.h>
 using namespace matrix;
 
 void RateControl::setGains(const Vector3f &P, const Vector3f &I, const Vector3f &D)
@@ -108,4 +108,55 @@ void RateControl::getRateControlStatus(rate_ctrl_status_s &rate_ctrl_status)
 	rate_ctrl_status.rollspeed_integ = _rate_int(0);
 	rate_ctrl_status.pitchspeed_integ = _rate_int(1);
 	rate_ctrl_status.yawspeed_integ = _rate_int(2);
+}
+
+matrix::Vector3f RateControl::torque_update(bool arm,const matrix::Quatf &q,float roll,float pitch,float yaw,const float dt)
+{
+	static Parm Phi={0} , Theta={0} , Psai={0} ;
+	Vector3f torque,angle,angle_sp;
+// NED 2 ENU
+/* 	angle(0) = Eulerf(q).theta();
+	angle(1) = -Eulerf(q).phi();
+	angle(2) = -Eulerf(q).psi() + (float)M_PI/2.f; */
+	angle(0) = Eulerf(q).theta();
+	angle(1) = -Eulerf(q).phi();
+	angle(2) = -Eulerf(q).psi() + (float)M_PI/2.f;
+
+	/* angle_sp(0) = pitch;
+	angle_sp(1) = -roll;
+	angle_sp(2) = -yaw + (float)M_PI/2.f; */
+	angle_sp(0) = 0;
+	angle_sp(1) = 0;
+	angle_sp(2) = -0;
+
+
+	if(arm){
+		ADRC_Init(&Phi,3.8,35);
+		torque(0) = ADRC_Saturation(ADRC_Control(&Phi,angle(0),angle_sp(0),dt),-5,5);
+		//torque(0) =  0;
+
+		//PX4_INFO("%f %f %f",(double)_angle(0),(double)angle_sp(0),(double)torque(0));
+		ADRC_Init(&Theta,1.4,35);
+		torque(1) = ADRC_Saturation(ADRC_Control(&Theta,angle(1),angle_sp(1),dt),-5,5);
+
+		/* if(angle(1)<0.01f)
+		{
+			ADRC_Reset(&Theta);
+		} */
+		//torque(1) = 0;
+		ADRC_Init(&Psai,0.5,20);
+		torque(2) = ADRC_Saturation(ADRC_Control(&Psai,angle(2),angle_sp(2),dt),-0.5,0.5);
+	}else{
+		ADRC_Reset(&Phi);
+		ADRC_Reset(&Theta);
+		ADRC_Reset(&Psai);
+	}
+	bool log = 0;
+	if(log){
+		PX4_INFO("phi %f %f %f\n\n",(double)angle(0),(double)angle_sp(0),(double)torque(0));
+		PX4_INFO("theta %f %f %f\n\n",(double)angle(1),(double)angle_sp(1),(double)torque(1));
+	}
+	//torque(2) = 0;
+	//PX4_INFO("psai %f %f %f\n\n",(double)angle(2),(double)angle_sp(2),(double)torque(2));
+	return torque;
 }

@@ -494,6 +494,16 @@ void MulticopterPositionControl::Run()
 				_control.update(dt);
 			}
 
+			///////////////////////////////////////////////////////////////////////
+
+			//position ctrl onmi
+			//pos_ctrl_onmi 	    --return thrust
+			//publish_thrust_setpoint   -- publish to thrust_sp.msg
+			publish_thrust_setpoint(_vehicle_control_mode.flag_armed,dt, local_pos.timestamp_sample);
+
+
+			///////////////////////////////////////////////////////////////////////
+
 			// Publish internal position control setpoints
 			// on top of the input/feed-forward setpoints these containt the PID corrections
 			// This message is used by other modules (such as Landdetector) to determine vehicle intention.
@@ -534,6 +544,19 @@ void MulticopterPositionControl::Run()
 	}
 
 	perf_end(_cycle_perf);
+}
+
+void MulticopterPositionControl::publish_thrust_setpoint(bool arm,const float dt ,const hrt_abstime &timestamp_sample)
+{
+	thrust_sp_s thrust_setpoint {};
+	Vector3f thrust = _control.pos_ctrl_onmi(arm,dt);
+	thrust_setpoint.xyz[0] = thrust(0);
+	thrust_setpoint.xyz[1] = thrust(1);
+	thrust_setpoint.xyz[2] = (thrust(2) > 0) ? thrust(2) : 0.0f;
+	//PX4_INFO("%f  %f %f",(double)thrust_setpoint.xyz[0],(double)thrust_setpoint.xyz[1],(double)thrust_setpoint.xyz[2]);
+	thrust_setpoint.timestamp = hrt_absolute_time();
+	thrust_setpoint.timestamp_sample = timestamp_sample;
+	_thrust_sp_pub.publish(thrust_setpoint);
 }
 
 void MulticopterPositionControl::failsafe(const hrt_abstime &now, vehicle_local_position_setpoint_s &setpoint,

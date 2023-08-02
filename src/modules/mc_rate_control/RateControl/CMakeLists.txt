@@ -38,5 +38,6 @@ px4_add_library(RateControl
 target_compile_options(RateControl PRIVATE ${MAX_CUSTOM_OPT_LEVEL})
 target_include_directories(RateControl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(RateControl PRIVATE mathlib)
+target_link_libraries(RateControl PUBLIC ladrc)
 
 px4_add_unit_gtest(SRC RateControlTest.cpp LINKLIBS RateControl)

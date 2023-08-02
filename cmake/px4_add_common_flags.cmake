@@ -80,7 +80,7 @@ function(px4_add_common_flags)
 		-Winit-self
 		-Wlogical-op
 		-Wpointer-arith
-		-Wshadow
+		#-Wshadow
 		-Wuninitialized
 		-Wunknown-pragmas
 		-Wunused-variable

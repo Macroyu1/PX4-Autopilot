@@ -64,6 +64,8 @@
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
+#include <uORB/topics/thrust_sp.h>
+#include <uORB/topics/anti_windup.h>
 
 using namespace time_literals;
 
@@ -88,6 +90,9 @@ public:
 private:
 	void Run() override;
 
+	/*
+	*/
+	void publish_thrust_setpoint(bool arm,const float dt ,const hrt_abstime &timestamp_sample);
 	Takeoff _takeoff; /**< state machine and ramp to bring the vehicle off the ground without jumps */
 
 	orb_advert_t _mavlink_log_pub{nullptr};
@@ -105,6 +110,9 @@ private:
 	uORB::Subscription _vehicle_constraints_sub {ORB_ID(vehicle_constraints)};
 	uORB::Subscription _vehicle_control_mode_sub {ORB_ID(vehicle_control_mode)};
 	uORB::Subscription _vehicle_land_detected_sub {ORB_ID(vehicle_land_detected)};
+
+	uORB::Subscription _anti_windup_sub{ORB_ID(vehicle_land_detected)};
+	uORB::Publication<thrust_sp_s> 		 	     _thrust_sp_pub{ORB_ID(thrust_sp)};
 
 	hrt_abstime	_time_stamp_last_loop{0};		/**< time stamp of last loop iteration */
 

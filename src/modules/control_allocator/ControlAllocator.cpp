@@ -45,6 +45,7 @@
 #include <circuit_breaker/circuit_breaker.h>
 #include <mathlib/math/Limits.hpp>
 #include <mathlib/math/Functions.hpp>
+#include <SQP/SQP.hpp>
 
 using namespace matrix;
 using namespace time_literals;
@@ -369,7 +370,7 @@ ControlAllocator::Run()
 		}
 	}
 
-	if (do_update) {
+	if (!do_update) {
 		_last_run = now;
 
 		update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::NO_EXTERNAL_UPDATE);
@@ -408,10 +409,14 @@ ControlAllocator::Run()
 
 			_control_allocation[i]->clipActuatorSetpoint();
 		}
+	}else
+	{
+		alloaction_onmi(dt);//全驱动控制分配
 	}
 
+
 	// Publish actuator setpoint and allocator status
-	publish_actuator_controls();
+	//publish_actuator_controls();
 
 	// Publish status at limited rate, as it's somewhat expensive and we use it for slower dynamics
 	// (i.e. anti-integrator windup)
@@ -422,6 +427,264 @@ ControlAllocator::Run()
 
 	perf_end(_loop_perf);
 }
+
+void
+ControlAllocator::alloaction_onmi(const float dt)
+{
+	//******************************************************全驱动控制分配*****************************************************************
+	//PX4_INFO("Start fully-actuated allocation!!!\n\n");
+	////////////////////////////////////////////开始控制分配//////////////////////////////////
+	actuator_motors_s actuator_motors;
+	actuator_motors.timestamp = hrt_absolute_time();
+	actuator_motors.timestamp_sample = _timestamp_sample;
+
+	actuator_servos_s actuator_servos;
+	actuator_servos.timestamp = actuator_motors.timestamp;
+	actuator_servos.timestamp_sample = _timestamp_sample;
+
+	//const hrt_abstime now = hrt_absolute_time();
+	//const float dt = math::constrain(((now - _last_run) / 1e6f), 0.0002f, 0.02f);
+	// 更新力和力矩
+	torque_sp_s			torque_onmi_sp ;
+	thrust_sp_s			thrust_onmi_sp ;
+	_manual_control_setpoint_sub.update(&_manual_control_setpoint);//更新遥控器通道值
+	// Run allocator on torque changes
+	if (_torque_sp_sub.update(&torque_onmi_sp)) {
+		_torque_sp_onmi = matrix::Vector3f(torque_onmi_sp.xyz);
+		_timestamp_sample = torque_onmi_sp.timestamp_sample;}
+	// Also run allocator on thrust setpoint changes if the torque setpoint
+	// has not been updated for more than 5ms
+	if (_thrust_sp_sub.update(&thrust_onmi_sp)) {
+		_thrust_sp_onmi = matrix::Vector3f(thrust_onmi_sp.xyz);
+	}
+	float A_inv[72] = {-0.2404, 0.1388, 0.0000, 0.0416,-0.0240, 0.0240,
+				0, 0.0000, 0.1388, 0.8721, 0.5035, 0.5035,
+				0.2404, 0.1388, 0.0000, 0.0416, 0.0240,-0.0240,
+				0, 0.0000, 0.1388, 0.8721,-0.5035,-0.5035,
+				0,-0.2775, 0.0000,-0.0000, 0.0480, 0.0240,
+				0,-0.0000, 0.1388,-0.0000,-1.0070, 0.5035,
+				-0.2404, 0.1388, 0.0000,-0.0416, 0.0240,-0.0240,
+				0,-0.0000, 0.1388,-0.8721,-0.5035,-0.5035,
+				0.2404, 0.1388,-0.0000,-0.0416,-0.0240, 0.0240,
+				0,-0.0000, 0.1388,-0.8721, 0.5035, 0.5035,
+				0,-0.2775, 0.0000,-0.0000,-0.0480,-0.0240,
+				0, 0.0000, 0.1388,-0.0000, 1.0070,-0.5035};
+	Matrix<float, 12, 6> A0(A_inv);
+	A0.operator*=(100000.0);
+	float u[6] = {0,0 ,_thrust_sp_onmi(2)+_manual_control_setpoint.z*10,_torque_sp_onmi(0),_torque_sp_onmi(1),0};
+	Matrix<float,6,1> U(u);
+	Matrix<float,12,1> A1 = A0.operator*(U);
+	float omega[6],alpha[6];
+	bool optim_flag = 0;
+	float omega_max = 813;
+	for (int i = 0;i<6;i++)
+	{
+		omega[i] = sqrt(sqrt(powf(A1(2*i,0),2.0)+powf(A1(2*i+1,0),2.0)));
+		alpha[i] = atan2f(A1(2*i,0),A1(2*i+1,0));
+		if(omega[i] > omega_max){optim_flag = 1;}
+	}
+	//PX4_INFO("U = %f %f %f %f %f %f\n\n",(double)U(0,0),(double)U(1,0),(double)U(2,0),(double)U(3,0),(double)U(4,0),(double)U(5,0));
+	if(optim_flag){
+		// Vector<float,12>result = optim(A1);
+		// for(int i = 0;i < 6;i++){
+		// 	omega[i] = result(i);
+		// 	alpha[i] = result(i+6);
+		// }
+	}
+	/////////////////////////////计算舵机输出///////////////////////////////////////////
+	float alpha_d[6],alpha_set[6];
+	MRS mrs;
+	for (int i = 0;i<6;i++)
+	{
+		alpha_d[i] = (alpha[i]*180)/(float)M_PI;
+		alpha_set[i] = (alpha_d[i]/45)*1 + 0;
+		if (i ==2 || i==4 ||i==6){alpha_set[i] = -alpha_set[i];}//2/4/6号舵机反方向
+	}
+	mrs.Mrs_update(alpha_set,dt).copyTo(alpha_set);//更新MRS模型输出
+	/////////////////////////////计算电机输出///////////////////////////////////////////
+ 	float omega_set[6];
+	for (int i = 0;i<6;i++)
+	{
+		omega_set[i] = (omega[i]/1160.544f)+ 0 < 0.9f ? (omega[i]/1160.544f)+ 0 : 0.9f;
+		actuator_motors.control[i] = omega_set[i];
+		actuator_servos.control[i] = alpha_set[i];
+	}
+	actuator_motors.control[6]=0;actuator_motors.control[7]=0;
+	actuator_servos.control[6]=0;actuator_servos.control[7]=0;
+
+	/////////////////////////////发布电机和舵机输出///////////////////////////////////////////
+	_actuator_servos_pub.publish(actuator_servos);
+	_actuator_motors_pub.publish(actuator_motors);// 输出电机信号;
+
+	publish_anti_windup(windup(alpha_set,omega_set));//获取anti-windup，并发布消息；
+	bool log = 1;
+	if(log){
+		PX4_INFO("U:%f %f %f %f %f  %f\n\n",(double)u[0],(double)u[1],(double)u[2],(double)u[3],(double)u[4],(double)u[5]);
+		PX4_INFO("w:%f %f %f %f %f %f\n\n",(double)actuator_motors.control[0],(double)actuator_motors.control[1],(double)actuator_motors.control[2],
+		(double)actuator_motors.control[3],(double)actuator_motors.control[4],(double)actuator_motors.control[5]);
+		PX4_INFO("a:%f %f %f %f %f %f\n\n",(double)actuator_servos.control[0],(double)actuator_servos.control[1],(double)actuator_servos.control[2],
+		(double)actuator_servos.control[3],(double)actuator_servos.control[4],(double)actuator_servos.control[5]);
+	}
+
+}
+
+matrix::Vector<float,6> ControlAllocator::windup(const float* alphad,const float* omega)
+{
+	float Kt = 1.201e-5;
+	float Kq = 1.57e-7;
+	float l  = 0.275;
+	Vector<float,6>alpha;for(int i=0;i<6;i++){alpha(i) = alphad[i];}
+	float A[6*6] = {-(sqrtf(3)/2)*Kt*sinf(alpha(1)) ,      (sqrtf(3)/2)*Kt*sinf(alpha(2))  ,  0,
+           -(sqrtf(3)/2)*Kt*sinf(alpha(4))  ,     (sqrtf(3)/2)*Kt*sinf(alpha(5))  ,  0,
+
+           0.5f*Kt*sinf(alpha(1))  ,              0.5f*Kt*sinf(alpha(2))   ,         -Kt*sinf(alpha(3)) ,
+           0.5f*Kt*sinf(alpha(4))   ,             0.5f*Kt*sinf(alpha(5))    ,        -Kt*sinf(alpha(6)),
+
+	    Kt*cosf(alpha(1)) ,  Kt*cosf(alpha(2)) ,Kt*cosf(alpha(3)) ,Kt*cosf(alpha(4)) ,Kt*cosf(alpha(5)), Kt*cosf(alpha(6)),
+
+           (sqrtf(3)/2)*(l*Kt*cosf(alpha(1))+Kq*sinf(alpha(1))) , (sqrtf(3)/2)*(l*Kt*cosf(alpha(2))+Kq*sinf(alpha(2))) , 0 ,
+           -(sqrtf(3)/2)*(l*Kt*cosf(alpha(4))+Kq*sinf(alpha(4))), -(sqrtf(3)/2)*(l*Kt*cosf(alpha(5))+Kq*sinf(alpha(5))), 0,
+
+	  -0.5f*(-l*Kt*cosf(alpha(1))+Kq*sinf(alpha(1))), 0.5f*(-l*Kt*cosf(alpha(2))+Kq*sinf(alpha(2))), (-l*Kt*cosf(alpha(3))+Kq*sinf(alpha(3))) ,
+          0.5f*(-l*Kt*cosf(alpha(4))+Kq*sinf(alpha(4))), -0.5f*(-l*Kt*cosf(alpha(5))+Kq*sinf(alpha(5))) ,-(-l*Kt*cosf(alpha(6))+Kq*sinf(alpha(6))),
+
+	  (l*Kt*cosf(alpha(1))+Kq*sinf(alpha(1))),-(l*Kt*cosf(alpha(2))+Kq*sinf(alpha(2))),(l*Kt*cosf(alpha(3))+Kq*sinf(alpha(3))),
+           -(l*Kt*cosf(alpha(4))+Kq*sinf(alpha(4))),(l*Kt*cosf(alpha(5))+Kq*sinf(alpha(5))), -(l*Kt*cosf(alpha(6))+Kq*sinf(alpha(6)))
+	};
+	matrix::Matrix<float,6,6>matrixA(A);//定义控制分配矩阵
+	matrix::Matrix<float,6,1>W(omega);//定义转速矩阵
+	matrix::Matrix<float,6,1>W2;for(int i=0;i<6;i++){W2(i,0) = powf(W(i,0),2);}//转速矩阵平方
+	matrix::Matrix<float,6,1>U = matrixA.operator*(W2);
+	return U;
+}
+void ControlAllocator::publish_anti_windup(matrix::Vector<float,6> uast)
+{
+	anti_windup_s antiwindup {};
+	antiwindup.timestamp = hrt_absolute_time();
+	uast.copyTo(antiwindup.usat);
+	_anti_windup_pub.publish(antiwindup);
+}
+// matrix::Vector<float,12>
+// ControlAllocator:: optim(matrix::Matrix<float,12,1>x_n)
+// {
+
+// 	float v1[12*6] = {-0.5386f,0.3701f,	0.4062f,	0.1537f,	0.1486f,	0.1668f,
+// 		-0.0529f,	0.2195f,  	-0.1223f, 	-0.3077f,	0.2112f, 	-0.3595f,
+// 		0.1280f,	0.6041f,   	-0.2704f,	0.2978f,	0.1670f,	0.3074f,
+// 		0.0457f,   	-0.1381f,	0.0815f,	0.5160f,   	-0.1154f,  	-0.1646f,
+// 		0.1727f,	0.5435f,	0.3360f,  	-0.0096f,   	-0.4755f,  	-0.0348f,
+// 		0.0606f,   	-0.0922f,	0.0375f,  	-0.2198f,  	-0.1065f,	0.5111f,
+// 		0.7902f,	0.1237f,	0.0806f,   	-0.0109f,	0.1367f,  	-0.0225f,
+// 		-0.0920f,	0.2576f,   	-0.1224f,  	-0.3004f,	0.1731f,   	-0.3528f,
+// 		0.1237f,  	-0.1104f,	0.7572f,  	-0.1550f,	0.1183f,   	-0.1631f,
+// 		0.0218f,   	-0.1304f,	0.0482f,	0.5381f,   	-0.0744f,  	-0.1398f,
+// 		0.0789f,   	-0.0498f,	0.1508f,	0.1524f,	0.7608f,	0.1791f,
+// 		0.0168f,   	-0.1165f,	0.0775f,   	-0.2263f,  	-0.0880f,	0.5056f};
+// 	matrix::Matrix<float,12,6> v(v1);
+// 	//define a obj_fun
+// 	obj_fun f = [v,x_n](vec& x)-> float {
+// 		matrix::Vector<float,12> X;
+// 		float temp_x;
+// 		float X_norm = 0.f;
+// 		for (int i = 0;i<12;i++)
+// 		{
+// 			for (int j = 0;j <6; j++)
+// 			{
+// 				temp_x += (float)x(j)*v(i,j);
+// 			}
+// 			X(i) = x_n(i,1) +temp_x;
+// 			temp_x = 0.f;
+// 		}
+// 		for (int i = 0;i<6;i++)
+// 		{
+// 			X_norm += powf(X(i),2);
+// 		}
+// 		return X_norm;
+// 	};
+
+// 	//define a start point
+// 	vec x0 = { 0,0,0,0,0,0 };
+
+// 	/* //optimization without constraints
+// 	//using default algorithm BFGS
+// 	auto result1 = sci_arma::fmincon(f, x0);
+
+// 	//define linear constraints Ax<=b
+// 	mat A = { {1,1,1,0},{2,3,4,5} };
+// 	vec b = { 3,15 };
+
+// 	//optimization with inequality linear constraints
+// 	auto result2 = sci_arma::fmincon(f, x0, A, b);
+
+// 	//define linear equality constraints
+// 	mat Aeq = { {1,0,2,0} };
+// 	vec beq = { 3 };
+
+// 	//optimization with mixed linear constraints
+// 	auto result3 = sci_arma::fmincon(f, x0, A, b, Aeq, beq);
+//  */
+// 	//define non-linear inequality constraints c(x)<=0
+// 	auto c = [v,x_n](vec& x)->vec {
+// 		//vec temp = { 25 * x(0) * x(0) + x(1) * x(1) + x(2) * x(2) + x(3) * x(3) - 50 * x(3) };
+// 		matrix::Vector<float,12> X;
+// 		float temp_x;
+// 		for (int i = 0;i<12;i++)
+// 		{
+// 			for (int j = 0;j <6; j++)
+// 			{
+// 				temp_x += (float)x(j)*v(i,j);
+// 			}
+// 			X(i) = x_n(i,1) +temp_x;
+// 			temp_x = 0.f;
+// 		}
+// 		float omega[6],alpha[6];
+// 		float w_max = 823;
+// 		float a_max = M_PI/4;
+// 		//PX4_INFO("T = %f \n",(double)_thrust_sp(1));PX4_INFO("A1 = %f \n",(double)A1(4,0));
+// 		for (int i = 0;i<6;i++)
+// 		{
+// 			omega[i] = sqrt(sqrt(powf(X(2*i),2.0)+powf(X(2*i+1),2.0)));
+// 			alpha[i] = atan2f(X(2*i),X(2*i+1));
+// 		}
+// 		vec temp = { {omega[0] - w_max},{omega[1] - w_max},{omega[2] - w_max},
+// 				{omega[3] - w_max},{omega[4] - w_max},{omega[5] - w_max},
+// 				{abs(alpha[0]) - a_max}};
+// 		return temp;
+// 	};
+// 	vec lb = {-10000,-10000,-10000,-10000,-10000,-10000};
+// 	vec ub = {10000,10000,10000,10000,10000,10000};
+// 	//optimization with mixed constraints
+// 	//set options::algorithm from preset(Powell_modified) to Powell
+// 	options opt;
+// 	opt.algo = Powell;
+// 	auto xfval = sci_arma::fmincon(f, x0, lb, ub, c, opt);
+
+// 	matrix::Vector<float,12> X;float temp_x;
+// 	float omega_n[6],alpha_n[6];
+// 	for (int i = 0;i<12;i++)
+// 	{
+// 		for (int j = 0;j <6; j++)
+// 		{
+// 			temp_x += (float)xfval.x(j)*v(i,j);
+// 		}
+// 		X(i) = x_n(i,1) +temp_x;
+// 		temp_x = 0.f;
+// 	}
+// 	for(int i = 0;i<6;i++)
+// 	{
+// 		omega_n[i] = sqrt(sqrt(powf(X(2*i),2.0)+powf(X(2*i+1),2.0)));
+// 		alpha_n[i] = atan2f(X(2*i),X(2*i+1));
+// 	}
+// 	matrix::Vector<float,12>result;
+// 	for(int i = 0;i<6;i++)
+// 	{
+// 		result(i) = omega_n[i];
+// 		result(i+6) = alpha_n[i];
+// 	}
+// 	return result;
+
+
+// }
 
 void
 ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReason reason)
