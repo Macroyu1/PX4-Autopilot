@@ -1,0 +1,5 @@
+menuconfig MODULES_ACT_OPT
+  bool "act_opt"
+  default n
+  ---help---
+    Enable support for act_opt

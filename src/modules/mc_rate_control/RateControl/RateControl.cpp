@@ -131,12 +131,12 @@ matrix::Vector3f RateControl::torque_update(bool arm,const matrix::Quatf &q,floa
 
 
 	if(arm){
-		ADRC_Init(&Phi,3.8,35);
+		ADRC_Init(&Phi,2.6,25);
 		torque(0) = ADRC_Saturation(ADRC_Control(&Phi,angle(0),angle_sp(0),dt),-5,5);
 		//torque(0) =  0;
 
 		//PX4_INFO("%f %f %f",(double)_angle(0),(double)angle_sp(0),(double)torque(0));
-		ADRC_Init(&Theta,1.4,35);
+		ADRC_Init(&Theta,1.8,25);
 		torque(1) = ADRC_Saturation(ADRC_Control(&Theta,angle(1),angle_sp(1),dt),-5,5);
 
 		/* if(angle(1)<0.01f)
@@ -144,7 +144,7 @@ matrix::Vector3f RateControl::torque_update(bool arm,const matrix::Quatf &q,floa
 			ADRC_Reset(&Theta);
 		} */
 		//torque(1) = 0;
-		ADRC_Init(&Psai,0.5,20);
+		ADRC_Init(&Psai,0.5,35);
 		torque(2) = ADRC_Saturation(ADRC_Control(&Psai,angle(2),angle_sp(2),dt),-0.5,0.5);
 	}else{
 		ADRC_Reset(&Phi);

@@ -208,6 +208,7 @@ set(msg_files
 	torque_sp.msg
 	thrust_sp.msg
 	anti_windup.msg
+	actuator_optim.msg
 )
 
 if(NOT px4_constrained_flash_build)

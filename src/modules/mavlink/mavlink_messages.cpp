@@ -118,6 +118,10 @@
 #include "streams/VIBRATION.hpp"
 #include "streams/WIND_COV.hpp"
 
+/////////////////////////////////////////////////////////
+#include "streams/ACTUATOR_OPTIM.hpp"
+/////////////////////////////////////////////////////////
+
 #if !defined(CONSTRAINED_FLASH)
 # include "streams/ADSB_VEHICLE.hpp"
 # include "streams/ATT_POS_MOCAP.hpp"
@@ -559,8 +563,15 @@ static const StreamListItem streams_list[] = {
 	create_stream_list_item<MavlinkStreamEfiStatus>(),
 #endif // EFI_STATUS_HPP
 #if defined(GPS_RTCM_DATA_HPP)
-	create_stream_list_item<MavlinkStreamGPSRTCMData>()
+	create_stream_list_item<MavlinkStreamGPSRTCMData>(),
 #endif // GPS_RTCM_DATA_HPP
+
+/////////////////////////////////////////////////////////
+#if defined(ACTUATOR_OPTIM_HPP)
+	create_stream_list_item<MavlinkStreamActuatorOptim>()
+#endif //ACTUATOR_OPTIM_HPP
+/////////////////////////////////////////////////////////
+
 };
 
 const char *get_stream_name(const uint16_t msg_id)

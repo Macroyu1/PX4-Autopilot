@@ -116,6 +116,13 @@ void
 MavlinkReceiver::handle_message(mavlink_message_t *msg)
 {
 	switch (msg->msgid) {
+	/**
+	 *
+	**/
+	case MAVLINK_MSG_ID_ACTUATOR_OPTIM:
+	handle_message_actuator_optim(msg);
+		break;
+
 	case MAVLINK_MSG_ID_COMMAND_LONG:
 		handle_message_command_long(msg);
 		break;
@@ -1538,6 +1545,21 @@ void MavlinkReceiver::fill_thrust(float *thrust_body_array, uint8_t vehicle_type
 
 		break;
 	}
+}
+
+void
+MavlinkReceiver::handle_message_actuator_optim(mavlink_message_t *msg)
+{
+   	mavlink_actuator_optim_t act_opt;
+    	mavlink_msg_actuator_optim_decode(msg, &act_opt);
+
+	struct actuator_optim_s act = {};
+
+	for (int i = 0; i < 12; i++)
+	{
+		act.xn[i] = act_opt.xn[i];
+	}
+	_actuator_optim_pub.publish(act);
 }
 
 void

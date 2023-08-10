@@ -142,8 +142,8 @@ PositionControl::pos_ctrl_onmi(bool arm,const float dt)
 	if(arm){
 		//thrust(0) = X.ADRC_Run(_pos(0),_pos_sp(0),dt,-10,10);
 		//thrust(1) = Y.ADRC_Run(_pos(1),_pos_sp(1),dt,-15,15);
-		thrust(2) = Z.ADRC_Run(pos_onmi(2),pos_onmi_sp(2),dt,0,30);
-		Z.ADRC_Log(1);
+		thrust(2) = Z.ADRC_Run(pos_onmi(2),pos_onmi_sp(2),dt,0.f,50.f);
+		Z.ADRC_Log(0);
 	}else{
 		//thrust(0) = X.ADRC_Reset();
 		//thrust(1) = Y.ADRC_Reset();

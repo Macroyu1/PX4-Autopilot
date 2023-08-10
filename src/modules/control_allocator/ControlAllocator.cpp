@@ -484,13 +484,15 @@ ControlAllocator::alloaction_onmi(const float dt)
 		if(omega[i] > omega_max){optim_flag = 1;}
 	}
 	//PX4_INFO("U = %f %f %f %f %f %f\n\n",(double)U(0,0),(double)U(1,0),(double)U(2,0),(double)U(3,0),(double)U(4,0),(double)U(5,0));
-	if(optim_flag){
-		// Vector<float,12>result = optim(A1);
-		// for(int i = 0;i < 6;i++){
-		// 	omega[i] = result(i);
-		// 	alpha[i] = result(i+6);
-		// }
-	}
+		act_optim_data.flag = optim_flag;
+		_act_opt_sub.update(&act_optim_data);
+		//PX4_INFO("%f  %f  %f\n\n",(double)act_optim_data.xn[0],(double)act_optim_data.xn[1],(double)act_optim_data.xn[2]);
+		for(int i = 0;i < 12;i++){
+			act_optim_data.xn[i] = A1(i,0);
+		}
+		//PX4_INFO("%f  %f  %f\n\n",(double)act_optim_data.xn[0],(double)act_optim_data.xn[1],(double)act_optim_data.xn[2]);
+		//_act_optim_pub.publish(act_optim_data);
+
 	/////////////////////////////计算舵机输出///////////////////////////////////////////
 	float alpha_d[6],alpha_set[6];
 	MRS mrs;

@@ -23,7 +23,7 @@ void ADRC_Init(Parm *state,const float wc,const float b0)
   state->b0 = b0;
   state->wc = wc;
   if (b0 > 2){
-    state->w0 = 10*wc;
+    state->w0 = 8*wc;
   }else{
     state->w0 = 5*wc;
   }

@@ -57,10 +57,7 @@ private:
 
 	float Saturation()
 	{
-		float u_sat;
-		u_sat = (this->u0 < this->u_max) ? this->u0 : this->u_max;
-		u_sat = (this->u0 > this->u_min) ? this->u0 : this->u_min;
-		return u_sat;
+		return (this->u0 < this->u_min) ? this->u_min : (this->u0 > this->u_max) ? this->u_max : this->u0;
 	}
 
 	bool isvalid(const float x)
@@ -82,7 +79,7 @@ public:
 		if (b0 > 2){
 			this->w0 = 10*wc;
 		}else{
-			this->w0 = 8*wc;
+			this->w0 = 6*wc;
 		}
 		this->z1 = 0;
 		this->z2 = 0;
