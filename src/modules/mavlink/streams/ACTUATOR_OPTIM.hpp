@@ -34,7 +34,7 @@
 #ifndef ACTUATOR_OPTIM_HPP
 #define ACTUATOR_OPTIM_HPP
 
-#include <uORB/topics/actuator_optim.h>
+#include <uORB/topics/ActuatorOptim.h>
 
 class MavlinkStreamActuatorOptim : public MavlinkStream
 {
@@ -43,33 +43,33 @@ public:
 
 	static constexpr const char *get_name_static() { return "ACTUATOR_OPTIM"; }
 
-	static constexpr uint16_t get_id_static() { return MAVLINK_MSG_ID_ACTUATOR_OPTIM; }
+	static constexpr uint16_t get_id_static() { return MAVLINK_MSG_ID_ACTOPT_LEN; }
 
 	const char *get_name() const override { return get_name_static(); }
 	uint16_t get_id() override { return get_id_static(); }
 
 	unsigned get_size() override
 	{
-		return _act_optim_sub.advertised() ? (MAVLINK_MSG_ID_ACTUATOR_OPTIM_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
+		return _act_optim_sub.advertised() ? (MAVLINK_MSG_ID_ACTOPT_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
 	}
 
 private:
 	explicit MavlinkStreamActuatorOptim(Mavlink *mavlink) : MavlinkStream(mavlink){}
 
-	uORB::Subscription _act_optim_sub{ORB_ID(actuator_optim)};
+	uORB::Subscription _act_optim_sub{ORB_ID(ActuatorOptim)};
 
 	bool send() override
 	{
-		actuator_optim_s act_optim;
+		ActuatorOptim_s act_optim;
 
 		if (_act_optim_sub.update(&act_optim)) {
-			mavlink_actuator_optim_t msg{};
+			mavlink_actopt_t msg{};
 
 			for (unsigned i = 0; i < 12; i++) {
-				msg.xn[i] = act_optim.xn[i];
+				msg.controls[i] = act_optim.controls[i];
 			}
 
-			mavlink_msg_actuator_optim_send_struct(_mavlink->get_channel(), &msg);
+			mavlink_msg_actopt_send_struct(_mavlink->get_channel(), &msg);
 
 			return true;
 		}

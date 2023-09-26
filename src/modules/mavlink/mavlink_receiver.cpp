@@ -47,6 +47,8 @@
 #include <math.h>
 #include <poll.h>
 
+#include <px4_platform_common/log.h>
+
 #ifdef CONFIG_NET
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -119,10 +121,9 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 	/**
 	 *
 	**/
-	case MAVLINK_MSG_ID_ACTUATOR_OPTIM:
-	handle_message_actuator_optim(msg);
+	case MAVLINK_MSG_ID_Opt_Result:
+		handle_message_opt_result(msg);
 		break;
-
 	case MAVLINK_MSG_ID_COMMAND_LONG:
 		handle_message_command_long(msg);
 		break;
@@ -734,6 +735,26 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 		acknowledge(msg->sysid, msg->compid, cmd_mavlink.command, result, progress);
 	}
 }
+
+
+
+/// @brief /////////////////////////////////////////////////////////////////////////////////////////////////////////
+void
+MavlinkReceiver::handle_message_opt_result(mavlink_message_t *msg)
+{
+	mavlink_opt_result_t rst;
+	mavlink_msg_opt_result_decode(msg, &rst);
+	OptimResult_s opt_rst{};
+
+	opt_rst.flag = rst.flag;
+	for (int i = 0; i < 6; i++)
+	{
+	    opt_rst.opt_result[i] = rst.result[i]+i;
+	    PX4_INFO("%f",(double)opt_rst.opt_result[i]);
+	}
+	_opt_result_pub.publish(opt_rst);
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t MavlinkReceiver::handle_request_message_command(uint16_t message_id, float param2, float param3, float param4,
 		float param5, float param6, float param7)
@@ -1545,21 +1566,6 @@ void MavlinkReceiver::fill_thrust(float *thrust_body_array, uint8_t vehicle_type
 
 		break;
 	}
-}
-
-void
-MavlinkReceiver::handle_message_actuator_optim(mavlink_message_t *msg)
-{
-   	mavlink_actuator_optim_t act_opt;
-    	mavlink_msg_actuator_optim_decode(msg, &act_opt);
-
-	struct actuator_optim_s act = {};
-
-	for (int i = 0; i < 12; i++)
-	{
-		act.xn[i] = act_opt.xn[i];
-	}
-	_actuator_optim_pub.publish(act);
 }
 
 void

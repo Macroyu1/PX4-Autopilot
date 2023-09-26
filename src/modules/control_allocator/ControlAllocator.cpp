@@ -45,7 +45,7 @@
 #include <circuit_breaker/circuit_breaker.h>
 #include <mathlib/math/Limits.hpp>
 #include <mathlib/math/Functions.hpp>
-#include <SQP/SQP.hpp>
+// #include <SQP/SQP.hpp>
 
 using namespace matrix;
 using namespace time_literals;
@@ -471,7 +471,7 @@ ControlAllocator::alloaction_onmi(const float dt)
 				0, 0.0000, 0.1388,-0.0000, 1.0070,-0.5035};
 	Matrix<float, 12, 6> A0(A_inv);
 	A0.operator*=(100000.0);
-	float u[6] = {0,0 ,_thrust_sp_onmi(2)+_manual_control_setpoint.z*10,_torque_sp_onmi(0),_torque_sp_onmi(1),0};
+	float u[6] = {0,0 ,_thrust_sp_onmi(2)+10,_torque_sp_onmi(0),_torque_sp_onmi(1),0};
 	Matrix<float,6,1> U(u);
 	Matrix<float,12,1> A1 = A0.operator*(U);
 	float omega[6],alpha[6];
@@ -485,10 +485,11 @@ ControlAllocator::alloaction_onmi(const float dt)
 	}
 	//PX4_INFO("U = %f %f %f %f %f %f\n\n",(double)U(0,0),(double)U(1,0),(double)U(2,0),(double)U(3,0),(double)U(4,0),(double)U(5,0));
 		act_optim_data.flag = optim_flag;
-		_act_opt_sub.update(&act_optim_data);
-		//PX4_INFO("%f  %f  %f\n\n",(double)act_optim_data.xn[0],(double)act_optim_data.xn[1],(double)act_optim_data.xn[2]);
+
+		//PX4_INFO("%f  %f  %f %f %f %f\n\n",(double)act_optim_data.xn[0],(double)act_optim_data.xn[1],(double)act_optim_data.xn[2]
+				//,(double)act_optim_data.xn[3],(double)act_optim_data.xn[4],(double)act_optim_data.xn[5]);
 		for(int i = 0;i < 12;i++){
-			act_optim_data.xn[i] = A1(i,0);
+			act_optim_data.controls[i] = A1(i,0);
 		}
 		//PX4_INFO("%f  %f  %f\n\n",(double)act_optim_data.xn[0],(double)act_optim_data.xn[1],(double)act_optim_data.xn[2]);
 		//_act_optim_pub.publish(act_optim_data);
@@ -514,8 +515,11 @@ ControlAllocator::alloaction_onmi(const float dt)
 	actuator_motors.control[6]=0;actuator_motors.control[7]=0;
 	actuator_servos.control[6]=0;actuator_servos.control[7]=0;
 
+	////////////////////////////////电机转速优化///////////////////////////////////////////
+	_act_optim_pub.publish(act_optim_data);//发布优化信息
+
 	/////////////////////////////发布电机和舵机输出///////////////////////////////////////////
-	_actuator_servos_pub.publish(actuator_servos);
+	_actuator_servos_pub.publish(actuator_servos);// 发布舵机信号;
 	_actuator_motors_pub.publish(actuator_motors);// 输出电机信号;
 
 	publish_anti_windup(windup(alpha_set,omega_set));//获取anti-windup，并发布消息；

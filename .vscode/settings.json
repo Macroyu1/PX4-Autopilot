@@ -142,5 +142,6 @@
         ],
         "python.analysis.extraPaths": [
                 "/opt/ros/noetic/lib/python3/dist-packages"
-        ] // Added for rp2040
+        ],
+        "ros.distro": "noetic" // Added for rp2040
 }

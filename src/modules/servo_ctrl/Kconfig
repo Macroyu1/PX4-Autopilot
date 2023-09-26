@@ -1,0 +1,5 @@
+menuconfig MODULES_SERVO_CTRL
+  bool "servo_ctrl"
+  default n
+  ---help---
+    Enable support for servo_ctrl

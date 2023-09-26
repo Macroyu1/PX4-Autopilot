@@ -79,7 +79,7 @@
 #include <uORB/topics/torque_sp.h>
 #include <lib/MRS/MRS.h>
 #include <uORB/topics/anti_windup.h>
-#include <uORB/topics/actuator_optim.h>
+#include <uORB/topics/ActuatorOptim.h>
 
 class ControlAllocator : public ModuleBase<ControlAllocator>, public ModuleParams, public px4::ScheduledWorkItem
 {
@@ -193,15 +193,14 @@ private:
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};		/**< notification of manual control updates */
 	uORB::Subscription _thrust_sp_sub{ORB_ID(thrust_sp)};
 	uORB::Subscription _torque_sp_sub{ORB_ID(torque_sp)};
-	uORB::Subscription _act_opt_sub{ORB_ID(actuator_optim)};
 	uORB::Publication<anti_windup_s>	_anti_windup_pub{ORB_ID(anti_windup)};
-	uORB::Publication<actuator_optim_s>     _act_optim_pub{ORB_ID(actuator_optim)};
+	uORB::Publication<ActuatorOptim_s>     _act_optim_pub{ORB_ID(ActuatorOptim)};
 	//onmi
 	matrix::Vector3f _torque_sp_onmi;
 	matrix::Vector3f _thrust_sp_onmi;
 
 	manual_control_setpoint_s	_manual_control_setpoint {};	/**< manual control setpoint */
-	actuator_optim_s 		act_optim_data {};
+	ActuatorOptim_s 		act_optim_data {};
 
 	matrix::Vector3f _torque_sp;
 	matrix::Vector3f _thrust_sp;

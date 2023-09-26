@@ -48,14 +48,13 @@ fi
 #                        End Estimator Group Selection                        #
 ###############################################################################
 
-if param compare SYS_CTRL_ALLOC 1
-then
-	#
-	# Start Control Allocator
-	#
-	control_allocator start
-fi
-
+# if param compare SYS_CTRL_ALLOC 1
+# then
+# 	#
+# 	# Start Control Allocator
+# 	#
+# 	control_allocator start
+# fi
 #
 # Start Multicopter Rate Controller.
 #
@@ -77,7 +76,8 @@ fi
 mc_hover_thrust_estimator start
 flight_mode_manager start
 mc_pos_control start
-
+servo_ctrl start
+control_allocator start
 #
 # Start Multicopter Land Detector.
 #

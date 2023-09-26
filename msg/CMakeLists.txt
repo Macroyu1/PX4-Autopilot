@@ -37,6 +37,11 @@ cmake_policy(SET CMP0057 NEW)
 include(px4_list_make_absolute)
 
 set(msg_files
+	torque_sp.msg
+	thrust_sp.msg
+	anti_windup.msg
+	ActuatorOptim.msg
+	OptimResult.msg
 	action_request.msg
 	actuator_armed.msg
 	actuator_controls.msg
@@ -205,10 +210,6 @@ set(msg_files
 	wheel_encoders.msg
 	wind.msg
 	yaw_estimator_status.msg
-	torque_sp.msg
-	thrust_sp.msg
-	anti_windup.msg
-	actuator_optim.msg
 )
 
 if(NOT px4_constrained_flash_build)

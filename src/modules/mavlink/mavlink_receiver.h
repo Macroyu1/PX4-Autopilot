@@ -109,7 +109,7 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/vehicle_trajectory_bezier.h>
 #include <uORB/topics/vehicle_trajectory_waypoint.h>
-#include <uORB/topics/actuator_optim.h>
+#include <uORB/topics/OptimResult.h>
 
 #if !defined(CONSTRAINED_FLASH)
 # include <uORB/topics/debug_array.h>
@@ -154,7 +154,9 @@ private:
 					       float param4 = 0.0f, float param5 = 0.0f, float param6 = 0.0f, float param7 = 0.0f);
 
 	void handle_message(mavlink_message_t *msg);
-
+	//
+	void handle_message_opt_result(mavlink_message_t *msg);
+	//
 	void handle_message_adsb_vehicle(mavlink_message_t *msg);
 	void handle_message_att_pos_mocap(mavlink_message_t *msg);
 	void handle_message_battery_status(mavlink_message_t *msg);
@@ -202,7 +204,6 @@ private:
 	void handle_message_gimbal_manager_set_manual_control(mavlink_message_t *msg);
 	void handle_message_gimbal_device_information(mavlink_message_t *msg);
 	void handle_message_gimbal_device_attitude_status(mavlink_message_t *msg);
-	void handle_message_actuator_optim(mavlink_message_t *msg);
 #if !defined(CONSTRAINED_FLASH)
 	void handle_message_debug(mavlink_message_t *msg);
 	void handle_message_debug_float_array(mavlink_message_t *msg);
@@ -288,6 +289,9 @@ private:
 	uint16_t _mavlink_status_last_packet_rx_drop_count{0};
 
 	// ORB publications
+	//
+	uORB::Publication<OptimResult_s>				_opt_result_pub{ORB_ID(OptimResult)};
+	//
 	uORB::Publication<actuator_controls_s>			_actuator_controls_pubs[4] {ORB_ID(actuator_controls_0), ORB_ID(actuator_controls_1), ORB_ID(actuator_controls_2), ORB_ID(actuator_controls_3)};
 	uORB::Publication<airspeed_s>				_airspeed_pub{ORB_ID(airspeed)};
 	uORB::Publication<battery_status_s>			_battery_pub{ORB_ID(battery_status)};
@@ -321,7 +325,6 @@ private:
 	uORB::Publication<vehicle_rates_setpoint_s>		_rates_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_trajectory_bezier_s>		_trajectory_bezier_pub{ORB_ID(vehicle_trajectory_bezier)};
 	uORB::Publication<vehicle_trajectory_waypoint_s>	_trajectory_waypoint_pub{ORB_ID(vehicle_trajectory_waypoint)};
-	uORB::Publication<actuator_optim_s>	           _actuator_optim_pub{ORB_ID(actuator_optim)};
 #if !defined(CONSTRAINED_FLASH)
 	uORB::Publication<debug_array_s>			_debug_array_pub {ORB_ID(debug_array)};
 	uORB::Publication<debug_key_value_s>			_debug_key_value_pub{ORB_ID(debug_key_value)};

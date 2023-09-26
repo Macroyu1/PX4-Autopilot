@@ -43,7 +43,7 @@
 
 #include <lib/mixer/MultirotorMixer/MultirotorMixer.hpp>
 #include <uORB/topics/rate_ctrl_status.h>
-#include<lib/ladrc/ladrc.h>
+#include<lib/ladrc/ladrc.hpp>
 class RateControl
 {
 public:
