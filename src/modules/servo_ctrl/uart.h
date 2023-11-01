@@ -57,7 +57,7 @@ int set_uart_baudrate(const int fd, unsigned int baud)
 }
 
 
-int uart_init(char * uart_name)
+int uart_init(char const * uart_name)
 {
     int serial_fd = open(uart_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
 

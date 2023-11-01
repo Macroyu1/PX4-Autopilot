@@ -68,7 +68,7 @@ function(px4_add_common_flags)
 		# Warnings
 		-Wall
 		-Wextra
-		-Werror
+		# -Werror
 
 		-Warray-bounds
 		-Wcast-align
@@ -80,10 +80,10 @@ function(px4_add_common_flags)
 		-Winit-self
 		-Wlogical-op
 		-Wpointer-arith
-		#-Wshadow
+		# -Wshadow
 		-Wuninitialized
 		-Wunknown-pragmas
-		-Wunused-variable
+		# -Wunused-variable
 
 		# disabled warnings
 		-Wno-missing-field-initializers

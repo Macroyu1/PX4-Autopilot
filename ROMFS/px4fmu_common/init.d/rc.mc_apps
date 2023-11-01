@@ -1,3 +1,13 @@
+###
+ # @Author: Macroyu1 1628343763@qq.com
+ # @Date: 2023-09-04 14:38:56
+ # @LastEditors: Macroyu1 1628343763@qq.com
+ # @LastEditTime: 2023-10-27 15:47:26
+ # @FilePath: /PX4-Autopilot/ROMFS/px4fmu_common/init.d/rc.mc_apps
+ # @Description:
+ #
+ # Copyright (c) 2023 by HongYu Fu, All Rights Reserved.
+###
 #!/bin/sh
 #
 # Standard apps for multirotors. Attitude/Position estimator, Attitude/Position control.
@@ -77,6 +87,7 @@ mc_hover_thrust_estimator start
 flight_mode_manager start
 mc_pos_control start
 servo_ctrl start
+fauav_ctrl start
 control_allocator start
 #
 # Start Multicopter Land Detector.

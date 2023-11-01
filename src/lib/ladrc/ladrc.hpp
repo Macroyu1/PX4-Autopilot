@@ -51,7 +51,7 @@ private:
 	{
 		float kp = this->wc * this->wc;
 		float kd = 2 * this->wc;
-		this->u = kp * (this->state_setpoint - this->z1)-kd * this->z2 - this->z3;//
+		this->u = kp * (this->state_setpoint - this->z1) -kd * this->z2 - this->z3;//
 		this->u0 = this->u/this->b0;
 	}
 
@@ -77,9 +77,9 @@ public:
 		this->wc = wc_in;
 		this->b0 = b0_in;
 		if (b0 > 2){
-			this->w0 = 10*wc;
+			this->w0 = 8*wc;
 		}else{
-			this->w0 = 6*wc;
+			this->w0 = 5*wc;
 		}
 		this->z1 = 0;
 		this->z2 = 0;

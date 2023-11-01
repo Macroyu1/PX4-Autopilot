@@ -242,16 +242,16 @@ MulticopterRateControl::Run()
 			const Vector3f att_control = _rate_control.update(rates, _rates_sp, angular_accel, dt, _maybe_landed || _landed);
 
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			vehicle_attitude_setpoint_s att_sp {};
+			/* vehicle_attitude_setpoint_s att_sp {};
 			vehicle_attitude_s att {};
 
 			_vehicle_attitude_setpoint_sub.update(&att_sp);
 			_vehicle_attitude_sub.update(&att);
 
-			const Quatf q{att.q};
+			const Quatf q{att.q}; */
 
-			const Vector3f att_control_onmi =  _rate_control.torque_update(_v_control_mode.flag_armed,q, att_sp.roll_body, att_sp.pitch_body , att_sp.yaw_body , dt);
-			publishTorqueSetpoint_onmi(att_control_onmi,angular_velocity.timestamp_sample);
+			//const Vector3f att_control_onmi =  _rate_control.torque_update(_v_control_mode.flag_armed,q, att_sp.roll_body, att_sp.pitch_body , att_sp.yaw_body , dt);
+			//publishTorqueSetpoint_onmi(att_control_onmi,angular_velocity.timestamp_sample);
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			// publish rate controller status
 			rate_ctrl_status_s rate_ctrl_status{};

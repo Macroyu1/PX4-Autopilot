@@ -173,6 +173,7 @@ set(models
 	tailsitter
 	techpod
 	tiltrotor
+	tilthex
 	typhoon_h480
 	typhoon_h480_ctrlalloc
 	uuv_bluerov2_heavy

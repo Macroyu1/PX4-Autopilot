@@ -1,3 +1,5 @@
+#pragma once
+
 #include <px4_platform_common/px4_config.h>
 #include <px4_platform_common/tasks.h>
 #include <px4_platform_common/posix.h>
@@ -11,8 +13,9 @@
 #include <uORB/Subscription.hpp>
 #include <uORB/uORB.h>
 #include <uORB/topics/actuator_servos.h>
+#include <uORB/topics/servos_angel.h>
 
-class ServoCtrl : public ModuleBase<ServoCtrl>, public ModuleParams, public px4::ScheduledWorkItem
+class ServoCtrl : public ModuleBase<ServoCtrl>, public ModuleParams
 {
 	public:
 		ServoCtrl();
@@ -31,19 +34,30 @@ class ServoCtrl : public ModuleBase<ServoCtrl>, public ModuleParams, public px4:
 		/** @see ModuleBase::print_status() */
 		int print_status() override;
 
-		void Run() override;
+		void run() override;
 
 		bool init();
-	private:
+
+		static ServoCtrl *instantiate(int argc, char *argv[]);
 
 		void servo_control();
 		void servo_inquire();
 		//Inputs
-		uORB::Subscription servo_crtl_s{ORB_ID(actuator_servos), 1};;
-
+		uORB::Subscription servo_ctrl_s{ORB_ID(actuator_servos)};
 		//Outputs
-		//uORB::Publication<actuator_servos_s>
-		servo_ctrl_s servos {};
+		uORB::Publication<servos_angel_s> servos_angel_pub{ORB_ID(servos_angel)};
+
+
+		actuator_servos_s 	servos_s {};
+		// servos_angel_s servos_a {};
+		servos_angel_s 		servos_a {};
+		float servos[8];
+		int serial_fd;
+		int count = 0;
+	private:
+
+
+		// perf_counter_t	_loop_perf;			/**< loop duration performance counter */
 
 };
 

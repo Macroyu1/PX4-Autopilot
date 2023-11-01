@@ -121,7 +121,7 @@ bool PositionControl::update(const float dt)
 	return valid;
 }
 
-matrix::Vector3f
+/* matrix::Vector3f
 PositionControl::pos_ctrl_onmi(bool arm,const float dt)
 {
 	//static Parm X = {0};static Parm Y = {0};static Parm Z = {0};
@@ -152,7 +152,7 @@ PositionControl::pos_ctrl_onmi(bool arm,const float dt)
 	// PX4_INFO("Z %f %f %f\n\n",(double)-_pos(2),(double)-_pos_sp(2),(double)thrust(2));
 	return thrust;
 }
-
+ */
 void PositionControl::_positionControl()
 {
 	// P-position controller

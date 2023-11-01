@@ -111,7 +111,6 @@ private:
 	uORB::Subscription _vehicle_control_mode_sub {ORB_ID(vehicle_control_mode)};
 	uORB::Subscription _vehicle_land_detected_sub {ORB_ID(vehicle_land_detected)};
 
-	uORB::Subscription _anti_windup_sub{ORB_ID(vehicle_land_detected)};
 	uORB::Publication<thrust_sp_s> 		 	     _thrust_sp_pub{ORB_ID(thrust_sp)};
 
 	hrt_abstime	_time_stamp_last_loop{0};		/**< time stamp of last loop iteration */

@@ -37,11 +37,13 @@ cmake_policy(SET CMP0057 NEW)
 include(px4_list_make_absolute)
 
 set(msg_files
-	torque_sp.msg
-	thrust_sp.msg
+	servos_angel.msg
 	anti_windup.msg
 	ActuatorOptim.msg
 	OptimResult.msg
+	position_setpoint_onmi.msg
+	torque_sp.msg
+	thrust_sp.msg
 	action_request.msg
 	actuator_armed.msg
 	actuator_controls.msg

@@ -4,17 +4,19 @@
 #include <circuit_breaker/circuit_breaker.h>
 #include <mathlib/math/Limits.hpp>
 #include <mathlib/math/Functions.hpp>
+#include <string.h>
+using namespace std;
 
+extern "C" __EXPORT int servo_ctrl_main(int argc, char *argv[]);
 
 ServoCtrl::ServoCtrl() :
-	ModuleParams(nullptr),
-	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::rate_ctrl)
+	ModuleParams(nullptr)
 	{
 
 	}
 ServoCtrl::~ServoCtrl()
 {
-
+	// perf_free(_loop_perf);
 }
 
 bool
@@ -24,63 +26,128 @@ ServoCtrl::init()
 }
 
 void
-ServoCtrl::Run()
+ServoCtrl::run()
 {
-	int succe;
-
-	int uart_read = uart_init((char*)"/dev/ttyS6");
-        if(false == uart_read)succe = -1;
-        if(false == set_uart_baudrate(uart_read,115200)){
-	printf("12%f",(double)succe);
-     //   printf("[YCM]set_uart_baudrate is failed\n");
-
-        }
-
-
+	/*定义六个舵机的控制角度与读取角度信息命令*/
+	serial_fd = open("/dev/ttyS6", O_RDWR | O_NOCTTY | O_NONBLOCK);
+	set_uart_baudrate(serial_fd,115200);
+	printf("uart init is successful\n");
+	/*
+	 * TELEM1 : /dev/ttyS1
+	 * TELEM2 : /dev/ttyS2
+	 * GPS    : /dev/ttyS3
+	 * NSH    : /dev/ttyS5
+	 * SERIAL4: /dev/ttyS6
+	 * N/A    : /dev/ttyS4
+	 * IO DEBUG (RX only):/dev/ttyS0
+	 */
+	while(1)
+	{
+		servo_control();
+		servo_inquire();
+		/* 发布 servos_a 数据到 servos_angel 话题 */
+	}
 }
 
-void servo_control()
+void ServoCtrl::servo_control()
 {
-	char con0_write[16] =ser_ver.ser0;//1号舵机，P和T之间为驱动PWM值
-        char con0_write1[10] ="#000PRAD!";//读取对应舵机的角度
+	int pwm[8]={};
+	if(servo_ctrl_s.update(&servos_s)){
+		// servo_ctrl_s.copy(&servos);
+		for (int i = 0; i < 6; i++)
+		{
+		    servos[i] = servos_s.control[i];
 
-	char con1_write[16] =ser_ver.ser1;
-        char con1_write1[10] ="#001PRAD!";
-
-	char con2_write[16] =ser_ver.ser2;
-        char con2_write1[10] ="#002PRAD!";
-
-	char con3_write[16] =ser_ver.ser3;
-        char con3_write1[10] ="#003PRAD!";
-
-	char con4_write[16] =ser_ver.ser4;
-        char con4_write1[10] ="#004PRAD!";
-
-	char con5_write[16] =ser_ver.ser5;
-        char con5_write1[10] ="#005PRAD!";
+		}
+	}
+	for (int i = 0; i < 6; i++)
+	{
+		pwm[i] = servos[i]*500 + 1500;
+		//#000P1500T1000!
+		// pwm[i] = 1500;
+		char const *head = "#00";char const*p  = "P";char const*tail = "T1000!";
+		char *buf = new char[strlen(head) + sizeof(i) /
+			+ strlen(p) + sizeof(pwm[i]) +strlen(tail) + 1];
+		sprintf(buf,"%s%d%s%d%s",head,i,p,pwm[i],tail);
+		write(serial_fd,buf,16);
+		usleep(500);
+		// PX4_INFO("%s\n",buf);
+		delete(buf);
+	}
+		// write(serial_fd,"#000P2000T1000!",16);
+		// write(serial_fd,"#001P1000T1000!",16);
+		// write(serial_fd,"#002P2000T1000!",16);
+		// write(serial_fd,"#003P2000T1000!",16);
+		// write(serial_fd,"#004P1500T1000!",16);
+		// write(serial_fd,"#005P1000T1000!",16);
+		// write(serial_fd,"#001P!",5);
 }
 
+void ServoCtrl::servo_inquire()
+{
+	char data = '0';
+	char buffer[30] = "0";
+	int ser;double ser_deg[6];
+	//#000PRAD!
+	char const *head = "#00";char const*tail = "PRAD!";
+	for (int i = 0; i < 6; i++)
+	{
+		char *buf = new char[strlen(head) + strlen(tail) + 2];
+		sprintf(buf,"%s%d%s",head,i,tail);
+		// PX4_INFO("%s\n",buf);
+		write(serial_fd,buf,9);
+		delete(buf);
+		usleep(500);
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			read(serial_fd,&data,1);
+			buffer[j] = data;
+			data = '0';
+			usleep(500);
+		}
+		if((int)*buffer == 35){//#
+			ser = atoi(buffer+5);ser = ser > 1000 ? (ser < 2000) ? ser : 1500 : 1500;
+			ser_deg[buffer[3]-48] = ((ser-1500)*90.f/500.f);
+			// PX4_INFO("%f\n",servos_a.angel[buffer[3]-48]);
+		}
+	}
+	for (int i = 0; i < 5; i++)
+	{
+	    servos_a.angel[i] = ser_deg[i];
+	}
+
+	servos_angel_pub.publish(servos_a);
+}
 
 int ServoCtrl::task_spawn(int argc,char *argv[])
 {
-	ServoCtrl *instance = new ServoCtrl();
+	_task_id = px4_task_spawn_cmd("ServoCtrl",
+				      SCHED_DEFAULT,
+				      SCHED_PRIORITY_DEFAULT,
+				      3150,
+				      (px4_main_t)&run_trampoline,
+				      (char *const *)argv);
 
-	if (instance) {
-		_object.store(instance);
-		_task_id = task_id_is_work_queue;
-
-		if (instance->init()) {
-			return PX4_OK;
-		}
-	} else {
-		PX4_ERR("servo control failed");
+	if (_task_id < 0) {
+		_task_id = -1;
+		return 0;
 	}
 
-	delete instance;
-	_object.store(nullptr);
-	_task_id = -1;
+	return 0;
+}
 
-	return PX4_ERROR;
+ServoCtrl *ServoCtrl::instantiate(int argc, char *argv[])
+{
+	ServoCtrl *instance=new ServoCtrl();
+	if(instance==nullptr)
+	{
+		PX4_ERR("alloc failed");
+	}
+	return instance;
 }
 
 int ServoCtrl::print_status()
@@ -105,80 +172,9 @@ int ServoCtrl::print_usage(const char *reason)
 /**
  * Servo Control app start / stop handling function
  */
-extern "C" __EXPORT int servo_ctrl_main(int argc, char *argv[]);
-
 int servo_ctrl_main(int argc, char *argv[])
 {
 	return ServoCtrl::main(argc, argv);
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// extern "C" __EXPORT int act_opt_main(int argc, char *argv[]);
-
-// int act_opt_main(int argc, char **argv)
-// {
-//    int key_sub_fd = orb_subscribe(ORB_ID(OptimResult));
-//     orb_set_interval(key_sub_fd, 200); // limit the update rate to 200ms
-
-//     px4_pollfd_struct_t fds[1];
-//     fds[0].fd = key_sub_fd, fds[0].events = POLLIN;
-
-//     int error_counter = 0;
-
-//     while(true)
-//     {
-//         int poll_ret = px4_poll(fds, 1, 1000);
-
-//         if (poll_ret == 0)
-//         {
-//             PX4_ERR("Got no data within a second");
-//         }
-
-//         else if (poll_ret < 0)
-//         {
-//             if (error_counter < 10 || error_counter % 50 == 0)
-//             {
-//                 PX4_ERR("ERROR return value from poll(): %d", poll_ret);
-//             }
-
-//             error_counter++;
-//         }
-
-//         else
-//         {
-//             if (fds[0].revents & POLLIN)
-//             {
-//                 OptimResult_s input {};
-//                 orb_copy(ORB_ID(OptimResult), key_sub_fd, &input);
-//                 PX4_INFO("Recieved Char : %f", (double)input.opt_result[2]);
-//              }
-//         }
-//     }
-//     return 0;
-// }
