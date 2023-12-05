@@ -84,6 +84,7 @@ FauavCtrl::Run()
 
 	/* check for updates in other topics */
 	_ctrl_mode_sub.update(&_vehicle_control_mode);
+	_land_detected_sub.update(&_vehicle_land_detected);
 	arm = _vehicle_control_mode.flag_armed;
 
 
@@ -96,6 +97,7 @@ FauavCtrl::Run()
 
 	_manual_control_setpoint_sub.update(&manual_sp);
 	_pos_sp_sub.update(&pos_sp);_att_sp_sub.update(&att_sp);
+
 	// run controller on position & attitude updates
 	if (_pos_sub.update(&pos) && _att_sub.update(&att)) {
 		// Guard against too small (< 0.2ms) and too large (> 20ms) dt's.
@@ -109,7 +111,7 @@ FauavCtrl::Run()
 		_pos_sp_onmi_pub.publish(pos_onmi);
 
 		_control.setState(pos, att); // Set position and attitude states
-		_control.setInputSetpoint(manual_sp, att_sp);
+		_control.setInputSetpoint(pos_sp,manual_sp, att_sp);
 
 		// if (_vehicle_control_mode.flag_control_manual_enabled && !_vehicle_control_mode.flag_control_position_enabled) {
 		// 	// PX4_INFO("manual control enable!\n");

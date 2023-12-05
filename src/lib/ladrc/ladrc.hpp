@@ -37,9 +37,9 @@ private:
 		float beta03 = this->w0 * this->w0 * this->w0;
 
 		this->state_e = this->z1 - this->state_feedback;
-		this->z1 = this->z1 + this->h * (this->z2 - beta01 * this->state_e);
-		this->z2 = this->z2 + this->h * (this->z3 - beta02 * this->state_e + this->b0 * this->u0);
-		this->z3 = this->z3 - this->h * beta03 * this->state_e;
+		this->z1 += this->h * (this->z2 - beta01 * this->state_e);
+		this->z2 += this->h * (this->z3 - beta02 * this->state_e + this->b0 * this->u0);
+		this->z3 += - this->h * beta03 * this->state_e;
 	}
 
 	void MRS()
@@ -51,7 +51,7 @@ private:
 	{
 		float kp = this->wc * this->wc;
 		float kd = 2 * this->wc;
-		this->u = kp * (this->state_setpoint - this->z1) -kd * this->z2 - this->z3;//
+		this->u = kp * (this->state_setpoint - this->z1) -kd * this->z2; - this->z3;//
 		this->u0 = this->u/this->b0;
 	}
 
@@ -76,11 +76,7 @@ public:
 	LADRC(const float wc_in,const float b0_in){
 		this->wc = wc_in;
 		this->b0 = b0_in;
-		if (b0 > 2){
-			this->w0 = 8*wc;
-		}else{
-			this->w0 = 5*wc;
-		}
+		this->w0 = 3*this->wc;
 		this->z1 = 0;
 		this->z2 = 0;
 		this->z3 = 0;
@@ -110,8 +106,10 @@ public:
 	float ADRC_Run(const float state_feedback_in,const float state_setpoint_in,const float dt,const float min,const float max)
 	{
 
-		this->state_feedback = isvalid(state_feedback_in) ? state_feedback_in : this->state_feedback;
-		this->state_setpoint = isvalid(state_setpoint_in) ? state_setpoint_in : this->state_setpoint;
+		// this->state_feedback = isvalid(state_feedback_in) ? state_feedback_in : this->state_feedback;
+		// this->state_setpoint = isvalid(state_setpoint_in) ? state_setpoint_in : this->state_setpoint;
+		this->state_feedback = state_feedback_in;
+		this->state_setpoint = state_setpoint_in;
 		this->h              = dt;
 		this->u_min          = min;
 		this->u_max          = max;

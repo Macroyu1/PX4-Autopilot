@@ -476,7 +476,7 @@ ControlAllocator::alloaction_onmi(const float dt)
 			  };
 	Matrix<float, 12, 6> A0(A_inv);
 	A0.operator *= (100000.0);
-	float u[6] = {_manual_control_setpoint.x * 3, _manual_control_setpoint.y * 3,_thrust_sp_onmi(2)+ 5, _torque_sp_onmi(0), _torque_sp_onmi(1), 0};
+	float u[6] = {0, 0,_thrust_sp_onmi(2)+ 15 + _manual_control_setpoint.z*30, _torque_sp_onmi(0), _torque_sp_onmi(1), 0};
 	Matrix<float, 6, 1> U(u);
 	Matrix<float, 12, 1> A1 = A0.operator * (U);
 	float omega[6], alpha[6];
@@ -518,12 +518,18 @@ ControlAllocator::alloaction_onmi(const float dt)
 	float omega_set[6];
 
 	for (int i = 0; i < 6; i++) {
-		omega_set[i] = (omega[i] / 1160.544f) + 0 < 0.9f ? (omega[i] / 1160.544f) + 0 : 0.9f;
-		if(alpha_set[i] > 1 || alpha_set[i]<-1)
+		omega_set[i] = (omega[i] / 1547.392f) + 0 < 0.9f ? (omega[i] / 1547.392f) + 0 : 0.9f;
+/* 		if(alpha_set[i] > 1 || alpha_set[i]<-1)
 		{
+			if(i<=2)
+			{
+				alpha_set[i+3] = alpha_set[i+3] + alpha_set[i];
+			}else{
+				alpha_set[i-3] = alpha_set[i-3] + alpha_set[i];
+			}
 			alpha_set[i] = 0;
 			omega_set[i] = 0;
-		}
+		} */
 		actuator_motors.control[i] = omega_set[i];
 		actuator_servos.control[i] = alpha_set[i];
 	}
@@ -547,9 +553,9 @@ ControlAllocator::alloaction_onmi(const float dt)
 		PX4_INFO("w:%f %f %f %f %f %f\n\n", (double)actuator_motors.control[0], (double)actuator_motors.control[1],
 			 (double)actuator_motors.control[2],
 			 (double)actuator_motors.control[3], (double)actuator_motors.control[4], (double)actuator_motors.control[5]);
-		PX4_INFO("a:%f %f %f %f %f %f\n\n", (double)actuator_servos.control[0], (double)actuator_servos.control[1],
+		/* PX4_INFO("a:%f %f %f %f %f %f\n\n", (double)actuator_servos.control[0], (double)actuator_servos.control[1],
 			 (double)actuator_servos.control[2],
-			 (double)actuator_servos.control[3], (double)actuator_servos.control[4], (double)actuator_servos.control[5]);
+			 (double)actuator_servos.control[3], (double)actuator_servos.control[4], (double)actuator_servos.control[5]); */
 	}
 }
 

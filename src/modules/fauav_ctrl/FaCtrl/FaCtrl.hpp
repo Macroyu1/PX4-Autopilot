@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2023-10-23 08:47:53
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2023-11-01 15:29:46
+ * @LastEditTime: 2023-11-02 14:59:23
  * @FilePath: /PX4-Autopilot/src/modules/fauav_ctrl/FaCtrl/FaCtrl.hpp
  * @Description:	ADRC control lib for fully-actuated uav.
  *
@@ -49,7 +49,7 @@ public:
 	 * @param {vehicle_attitude_setpoint_s} &att_setpoint		姿态设定点结构体
 	 * @return {*}
 	 */
-	void setInputSetpoint(const manual_control_setpoint_s &pos_setpoint,const vehicle_attitude_setpoint_s &att_setpoint);
+	void setInputSetpoint(const vehicle_local_position_setpoint_s &pos_setpoint,const manual_control_setpoint_s &manual_setpoint,const vehicle_attitude_setpoint_s &att_setpoint);
 
 	/**
 	 * @description: 更新扭矩向量

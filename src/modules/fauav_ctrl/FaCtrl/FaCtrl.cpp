@@ -69,9 +69,9 @@ FaCtrl::setState(const vehicle_local_position_s &local_pos,const vehicle_attitud
 }
 
 void
-FaCtrl::setInputSetpoint(const manual_control_setpoint_s &pos_setpoint,const vehicle_attitude_setpoint_s &att_setpoint)
+FaCtrl::setInputSetpoint(const vehicle_local_position_setpoint_s &pos_setpoint,const manual_control_setpoint_s &manual_setpoint,const vehicle_attitude_setpoint_s &att_setpoint)
 {
-	_pos_sp = Vector3f(pos_setpoint.x*10, pos_setpoint.y*10, pos_setpoint.z*10);
+	_pos_sp = Vector3f(pos_setpoint.x*3, pos_setpoint.y*3, manual_setpoint.r*3);
 	_att_sp = Vector3f(att_setpoint.roll_body,att_setpoint.pitch_body,att_setpoint.yaw_body);
 }
 
@@ -80,14 +80,17 @@ FaCtrl::thrust_update(bool takeoff,const float dt)
 {
 	Vector3f thrust,pos_onmi,pos_onmi_sp;
 
-	static LADRC Z(1.5,0.5);
+	static LADRC X(0.5,2.5);static LADRC Y(0.5,2.5);static LADRC Z(5.5,0.5);
 
-	pos_onmi(2) = -(_pos(2));
-	pos_onmi_sp(2) = _pos_sp(2)>0?_pos_sp(2):-_pos_sp(2);
+	pos_onmi(2) = _pos(2)>0?_pos(2):-_pos(2);
+	pos_onmi_sp(2) = 0.3 + _pos_sp(2);
 	if(takeoff){
-		//thrust(0) = X.ADRC_Run(_pos(0),_pos_sp(0),dt,-10,10);
-		//thrust(1) = Y.ADRC_Run(_pos(1),_pos_sp(1),dt,-15,15);
-		thrust(2) = Z.ADRC_Run(pos_onmi(2),pos_onmi_sp(2),dt,1.f,30.f);//给一个最小推力
+		// thrust(0) = X.ADRC_Run(_pos(0),_pos_sp(0),dt,-3,3);
+		// thrust(1) = Y.ADRC_Run(_pos(1),_pos_sp(1),dt,-3,3);
+		thrust(2) = Z.ADRC_Run(pos_onmi(2),pos_onmi_sp(2),dt,5.f,35.f);//给一个最小推力
+
+
+
 		// Z.ADRC_Log(0);
 	}else{
 		//thrust(0) = X.ADRC_Reset();
@@ -104,7 +107,7 @@ FaCtrl::thrust_update(bool takeoff,const float dt)
 matrix::Vector3f
 FaCtrl::torque_update(bool takeoff,const matrix::Quatf &q,float roll,float pitch,float yaw,const float dt)
 {
-	static LADRC Phi(2,20);static LADRC Theta(2,20);static LADRC Psai(0,35);
+	static LADRC Phi(3.8,15);static LADRC Theta(3.8,15);static LADRC Psai(0,35);
 	Vector3f torque,angle,angle_sp;
 	// NED 2 ENU
 	angle(0) = Eulerf(q).theta();
@@ -119,16 +122,19 @@ FaCtrl::torque_update(bool takeoff,const matrix::Quatf &q,float roll,float pitch
 	angle_sp(2) = 0;
 
 	if(takeoff){
-		torque(0) = Phi.ADRC_Run(angle(0),angle_sp(0),dt,-5,5);
-		torque(1) = Theta.ADRC_Run(angle(1),angle_sp(1),dt,-5,5);
+		/* torque(0) = Phi.ADRC_Run(angle(0),angle_sp(0),dt,-5,5);
+		torque(1) = Theta.ADRC_Run(angle(1),angle_sp(1),dt,-5,5); */
 		torque(2) = Psai.ADRC_Run(angle(2),angle_sp(2),dt,-0.5,0.5);
+		torque(0) = -(angle(0)-angle_sp(0))*3.8*3.8;
+		torque(1) = -(angle(1)-angle_sp(1))*3.8*3.8;
+
 		// Theta.ADRC_Log(1);
 	}else{
 		torque(0) = Phi.ADRC_Reset();
 		torque(1) = Theta.ADRC_Reset();
 		torque(2) = Psai.ADRC_Reset();
 	}
-	bool log = 1;
+	bool log = 0;
 	if(log){
 		// PX4_INFO("%d\n",takeoff);
 		PX4_INFO("phi %f %f %f\n\n",(double)angle(0),(double)angle_sp(0),(double)torque(0));
