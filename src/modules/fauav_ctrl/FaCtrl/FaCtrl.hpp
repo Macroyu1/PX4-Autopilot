@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2023-10-23 08:47:53
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2023-11-02 14:59:23
+ * @LastEditTime: 2023-12-21 10:38:05
  * @FilePath: /PX4-Autopilot/src/modules/fauav_ctrl/FaCtrl/FaCtrl.hpp
  * @Description:	ADRC control lib for fully-actuated uav.
  *
@@ -25,6 +25,7 @@
 
 struct ControlStates {
 	matrix::Vector3f position;
+	matrix::Vector3f velocity;
 	matrix::Vector3f attitued;
 	float yaw;
 };
@@ -73,13 +74,16 @@ public:
 
 	void getPositionSetpoint(position_setpoint_onmi_s &pos_setpoint) const;
 
+	matrix::Vector3f R2D(matrix::Vector3f error);
+
 private:
 
 	// States
 	matrix::Vector3f _pos; /**< current position */
+	matrix::Vector3f _vel; /**< current velocity */
 	matrix::Vector3f _att; /**< current attitude */
 	// Setpoints
 	matrix::Vector3f _pos_sp; /**< desired position */
 	matrix::Vector3f _att_sp; /**< desired attitude */
-
+	matrix::Vector3f r2d;
 };

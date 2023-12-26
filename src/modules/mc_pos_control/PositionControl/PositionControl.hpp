@@ -43,6 +43,7 @@
 #include <matrix/matrix/math.hpp>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
+#include <uORB/topics/pos_onmi.h>
 #include <lib/ladrc/ladrc.hpp>
 
 struct PositionControlStates {
@@ -183,6 +184,8 @@ public:
 	 *
 	*/
 	matrix::Vector3f pos_ctrl_onmi(bool arm,const float dt);
+
+	void setposonmi(pos_onmi_s &pos_onmi) const;
 
 private:
 	bool _inputValid();

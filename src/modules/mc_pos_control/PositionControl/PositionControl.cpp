@@ -286,3 +286,17 @@ void PositionControl::getAttitudeSetpoint(vehicle_attitude_setpoint_s &attitude_
 	ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, attitude_setpoint);
 	attitude_setpoint.yaw_sp_move_rate = _yawspeed_sp;
 }
+
+// pos pos_sp
+void PositionControl::setposonmi(pos_onmi_s &pos_onmi) const
+{
+	// _pos.copyTo(pos_onmi.pos);
+	pos_onmi.pos[0] = _pos(0);
+	pos_onmi.pos[1] = _pos(1);
+	pos_onmi.pos[2] = _pos(2);
+	// _vel.copyTo(pos_onmi.vel);
+	pos_onmi.vel[0] = _vel(0);
+	pos_onmi.vel[1] = _vel(1);
+	pos_onmi.vel[2] = _vel(2);
+	_pos_sp.copyTo(pos_onmi.pos_sp);
+}

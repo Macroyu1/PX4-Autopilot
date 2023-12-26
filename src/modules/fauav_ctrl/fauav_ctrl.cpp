@@ -90,29 +90,23 @@ FauavCtrl::Run()
 
 	vehicle_attitude_s att{};
 	vehicle_attitude_setpoint_s att_sp{};
+	pos_onmi_s pos_onmi{};
 	vehicle_local_position_s pos{};
 	vehicle_local_position_setpoint_s pos_sp{};
-
 	manual_control_setpoint_s	manual_sp {};	/**< manual control setpoint */
 
 	_manual_control_setpoint_sub.update(&manual_sp);
-	_pos_sp_sub.update(&pos_sp);_att_sp_sub.update(&att_sp);
-
+	_pos_sp_sub.update(&pos_sp);
+	_pos_onmi_sub.update(&pos_onmi);_att_sp_sub.update(&att_sp);
+	// PX4_INFO("pos onim %f %f %f\n\n",(double)pos_onmi.pos[0],(double)pos_onmi.pos[1],(double)pos_onmi.pos[2]);
 	// run controller on position & attitude updates
-	if (_pos_sub.update(&pos) && _att_sub.update(&att)) {
+	if (_pos_sub.update(&pos) &&_att_sub.update(&att)) {
 		// Guard against too small (< 0.2ms) and too large (> 20ms) dt's.
-		const float dt = math::constrain(((pos.timestamp_sample - _last_run) * 1e-6f), 0.0002f, 0.02f);
-		_last_run = att.timestamp_sample;
-
-		//获取位置变量
-		position_setpoint_onmi_s pos_onmi{};
-		_control.getPositionSetpoint(pos_onmi);
-		pos_onmi.timestamp = hrt_absolute_time();
-		_pos_sp_onmi_pub.publish(pos_onmi);
+		const float dt = math::constrain(((pos.timestamp - _last_run) * 1e-6f), 0.0002f, 0.02f);
+		_last_run = pos.timestamp;
 
 		_control.setState(pos, att); // Set position and attitude states
-		_control.setInputSetpoint(pos_sp,manual_sp, att_sp);
-
+		_control.setInputSetpoint(pos_sp,manual_sp,att_sp);
 		// if (_vehicle_control_mode.flag_control_manual_enabled && !_vehicle_control_mode.flag_control_position_enabled) {
 		// 	// PX4_INFO("manual control enable!\n");
 		// 	manual_control_setpoint_s	_manual_control_setpoint {};	/**< manual control setpoint */
@@ -133,8 +127,8 @@ FauavCtrl::Run()
 		const Vector3f torque_onmi = _control.torque_update(arm, q, att_sp.roll_body, att_sp.pitch_body,
 					     att_sp.yaw_body, dt);
 		/* 发布力和力矩Topic消息 */
-		publishThrustSetpoint_onmi(thrust_onmi, pos.timestamp_sample);
-		publishTorqueSetpoint_onmi(torque_onmi, att.timestamp_sample);
+		publishThrustSetpoint_onmi(thrust_onmi, pos_onmi.timestamp);
+		publishTorqueSetpoint_onmi(torque_onmi, pos_onmi.timestamp);
 
 	}
 

@@ -64,14 +64,16 @@ FaCtrl::setState(const vehicle_local_position_s &local_pos,const vehicle_attitud
 		states.attitued(1) = NAN;
 		states.attitued(2) = NAN;
 	}
+	_vel(2) = local_pos.vz;
 	_pos = states.position;
 	_att = states.attitued;
+	// PX4_INFO("local_position  %f %f %f\n",(double)local_pos.x,(double)local_pos.y,(double)local_pos.z);
 }
 
 void
 FaCtrl::setInputSetpoint(const vehicle_local_position_setpoint_s &pos_setpoint,const manual_control_setpoint_s &manual_setpoint,const vehicle_attitude_setpoint_s &att_setpoint)
 {
-	_pos_sp = Vector3f(pos_setpoint.x*3, pos_setpoint.y*3, manual_setpoint.r*3);
+	_pos_sp = Vector3f(manual_setpoint.x*50, manual_setpoint.y*50, pos_setpoint.z);
 	_att_sp = Vector3f(att_setpoint.roll_body,att_setpoint.pitch_body,att_setpoint.yaw_body);
 }
 
@@ -80,26 +82,33 @@ FaCtrl::thrust_update(bool takeoff,const float dt)
 {
 	Vector3f thrust,pos_onmi,pos_onmi_sp;
 
-	static LADRC X(0.5,2.5);static LADRC Y(0.5,2.5);static LADRC Z(5.5,0.5);
+	static LADRC X(1,5);static LADRC Y(0,5);static LADRC Z(10.5,0.5);
 
-	pos_onmi(2) = _pos(2)>0?_pos(2):-_pos(2);
-	pos_onmi_sp(2) = 0.3 + _pos_sp(2);
+	pos_onmi_sp(0) = 0;
+	pos_onmi_sp(1) = 0;
+	pos_onmi(2) = _pos(2) > 0? 0 :-_pos(2);
+	pos_onmi_sp(2) = 5;
+	// PX4_INFO("states.position  %f %f %f\n",(double)_pos(0),(double)_pos(1),(double)pos_onmi(2));
 	if(takeoff){
-		// thrust(0) = X.ADRC_Run(_pos(0),_pos_sp(0),dt,-3,3);
-		// thrust(1) = Y.ADRC_Run(_pos(1),_pos_sp(1),dt,-3,3);
-		thrust(2) = Z.ADRC_Run(pos_onmi(2),pos_onmi_sp(2),dt,5.f,35.f);//给一个最小推力
-
-
+		thrust(0) = X.ADRC_Run(_pos(0),pos_onmi_sp(0),dt,-10,10);
+		PX4_INFO("X : %f %f %f\n\n",(double)_pos(0),(double)pos_onmi_sp(0),(double)thrust(0));
+		// thrust(1) = Y.ADRC_Run(_pos(1),pos_onmi_sp(1),dt,-10,10);
+		// thrust(0) = 0;
+		PX4_INFO("Y : %f %f %f\n\n",(double)_pos(1),(double)pos_onmi_sp(1),(double)thrust(1));
+		thrust(1) = 0;
+		// thrust(2) = Z.ADRC_Run(pos_onmi(2),pos_onmi_sp(2),dt,0.f,35.f);//给一个最小推力
+		thrust(2) = Z.ADRC_POS(pos_onmi(2),pos_onmi_sp(2),_vel(2),dt,0.f,35.f);
+		// PX4_INFO("%f %f %f\n\n",(double)pos_onmi(2),(double)pos_onmi_sp(2),(double)thrust(2));
 
 		// Z.ADRC_Log(0);
 	}else{
-		//thrust(0) = X.ADRC_Reset();
-		//thrust(1) = Y.ADRC_Reset();
+		thrust(0) = X.ADRC_Reset();
+		thrust(1) = Y.ADRC_Reset();
 		thrust(2) = Z.ADRC_Reset();
 	}
-	bool log = 1;
+	bool log = 0;
 	if(log){
-		PX4_INFO("z %f %f %f\n\n",(double)pos_onmi(2),(double)pos_onmi_sp(2),(double)thrust(2));
+		PX4_INFO("z %f %f %f\n\n",(double)thrust(0),(double)thrust(1),(double)thrust(2));
 	}
 	return thrust;
 }
@@ -107,7 +116,7 @@ FaCtrl::thrust_update(bool takeoff,const float dt)
 matrix::Vector3f
 FaCtrl::torque_update(bool takeoff,const matrix::Quatf &q,float roll,float pitch,float yaw,const float dt)
 {
-	static LADRC Phi(3.8,15);static LADRC Theta(3.8,15);static LADRC Psai(0,35);
+	static LADRC Phi(4,15);static LADRC Theta(4,15);static LADRC Psai(3,15);
 	Vector3f torque,angle,angle_sp;
 	// NED 2 ENU
 	angle(0) = Eulerf(q).theta();
@@ -117,17 +126,16 @@ FaCtrl::torque_update(bool takeoff,const matrix::Quatf &q,float roll,float pitch
 	/* angle_sp(0) = pitch;
 	angle_sp(1) = -roll;
 	angle_sp(2) = -yaw + (float)M_PI/2.f; */
-	angle_sp(0) = 0;
-	angle_sp(1) = 0;
+	angle_sp(0) = 0.1745;
+	angle_sp(1) = 0.1745;
 	angle_sp(2) = 0;
 
 	if(takeoff){
-		/* torque(0) = Phi.ADRC_Run(angle(0),angle_sp(0),dt,-5,5);
-		torque(1) = Theta.ADRC_Run(angle(1),angle_sp(1),dt,-5,5); */
-		torque(2) = Psai.ADRC_Run(angle(2),angle_sp(2),dt,-0.5,0.5);
-		torque(0) = -(angle(0)-angle_sp(0))*3.8*3.8;
-		torque(1) = -(angle(1)-angle_sp(1))*3.8*3.8;
-
+		torque(0) = Phi.ADRC_Run(angle(0),angle_sp(0),dt,-10,10);
+		torque(1) = Theta.ADRC_Run(angle(1),angle_sp(1),dt,-5,5);
+		torque(2) = Psai.ADRC_Run(angle(2),angle_sp(2),dt,-5,5);
+		Vector3f error = R2D(angle_sp - angle);
+		PX4_INFO("Attitude error: %f %f %f\n\n",(double)error(0),(double)error(1),(double)error(2));
 		// Theta.ADRC_Log(1);
 	}else{
 		torque(0) = Phi.ADRC_Reset();
@@ -149,4 +157,14 @@ FaCtrl::getPositionSetpoint(position_setpoint_onmi_s &pos_setpoint) const
 	pos_setpoint.x = _pos_sp(0);
 	pos_setpoint.y = _pos_sp(1);
 	pos_setpoint.z = _pos_sp(2);
+}
+
+matrix::Vector3f
+FaCtrl::R2D(matrix::Vector3f error)
+{
+	Vector3f error_d;
+	error_d(0) = error(0)*90.f/3.14f;
+	error_d(1) = error(1)*90.f/3.14f;
+	error_d(2) = error(2)*90.f/3.14f;
+	return error_d;
 }

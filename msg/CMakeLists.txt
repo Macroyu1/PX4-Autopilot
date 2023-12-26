@@ -44,6 +44,7 @@ set(msg_files
 	position_setpoint_onmi.msg
 	torque_sp.msg
 	thrust_sp.msg
+	pos_onmi.msg
 	action_request.msg
 	actuator_armed.msg
 	actuator_controls.msg

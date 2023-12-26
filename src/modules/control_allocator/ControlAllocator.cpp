@@ -476,7 +476,7 @@ ControlAllocator::alloaction_onmi(const float dt)
 			  };
 	Matrix<float, 12, 6> A0(A_inv);
 	A0.operator *= (100000.0);
-	float u[6] = {0, 0,_thrust_sp_onmi(2)+ 15 + _manual_control_setpoint.z*30, _torque_sp_onmi(0), _torque_sp_onmi(1), 0};
+	float u[6] = {_thrust_sp_onmi(0), _thrust_sp_onmi(1),_thrust_sp_onmi(2)+ 15 + _manual_control_setpoint.z*30, _torque_sp_onmi(0), _torque_sp_onmi(1), _torque_sp_onmi(2)};
 	Matrix<float, 6, 1> U(u);
 	Matrix<float, 12, 1> A1 = A0.operator * (U);
 	float omega[6], alpha[6];
@@ -510,7 +510,7 @@ ControlAllocator::alloaction_onmi(const float dt)
 		alpha_d[i] = (alpha[i] * 180) / (float)M_PI;
 		alpha_set[i] = (alpha_d[i] / 90) * 1 + 0;
 
-		if (i == 3) {alpha_set[i] = -alpha_set[i];} //0/2/4号舵机反方向
+		// if (i == 3 || i == 4 || i == 5) {alpha_set[i] = -alpha_set[i];} //0/2/4号舵机反方向
 	}
 
 	// mrs.Mrs_update(alpha_set,dt).copyTo(alpha_set);//更新MRS模型输出
@@ -531,7 +531,9 @@ ControlAllocator::alloaction_onmi(const float dt)
 			omega_set[i] = 0;
 		} */
 		actuator_motors.control[i] = omega_set[i];
-		actuator_servos.control[i] = alpha_set[i];
+		// actuator_servos.control[i] = alpha_set[i];
+		actuator_servos.control[i] = -alpha_set[i];
+		// actuator_servos.control[i] = 0;
 	}
 
 	actuator_motors.control[6] = 0; actuator_motors.control[7] = 0;
@@ -545,7 +547,7 @@ ControlAllocator::alloaction_onmi(const float dt)
 	_actuator_motors_pub.publish(actuator_motors);// 输出电机信号;
 
 	publish_anti_windup(windup(alpha_set, omega_set)); //获取anti-windup，并发布消息；
-	bool log = 1;
+	bool log = 0;
 
 	if (log) {
 		PX4_INFO("U:%f %f %f %f %f  %f\n\n", (double)u[0], (double)u[1], (double)u[2], (double)u[3], (double)u[4],
@@ -553,9 +555,9 @@ ControlAllocator::alloaction_onmi(const float dt)
 		PX4_INFO("w:%f %f %f %f %f %f\n\n", (double)actuator_motors.control[0], (double)actuator_motors.control[1],
 			 (double)actuator_motors.control[2],
 			 (double)actuator_motors.control[3], (double)actuator_motors.control[4], (double)actuator_motors.control[5]);
-		/* PX4_INFO("a:%f %f %f %f %f %f\n\n", (double)actuator_servos.control[0], (double)actuator_servos.control[1],
+		PX4_INFO("a:%f %f %f %f %f %f\n\n", (double)actuator_servos.control[0], (double)actuator_servos.control[1],
 			 (double)actuator_servos.control[2],
-			 (double)actuator_servos.control[3], (double)actuator_servos.control[4], (double)actuator_servos.control[5]); */
+			 (double)actuator_servos.control[3], (double)actuator_servos.control[4], (double)actuator_servos.control[5]);
 	}
 }
 

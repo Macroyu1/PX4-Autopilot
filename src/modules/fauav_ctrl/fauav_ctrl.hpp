@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2023-10-18 14:35:25
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2023-10-30 15:54:34
+ * @LastEditTime: 2023-12-19 10:27:30
  * @FilePath: /PX4-Autopilot/src/modules/fauav_ctrl/fauav_ctrl.hpp
  * @Description:Control for fully-actuated uav
  *
@@ -40,6 +40,7 @@
 #include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/position_setpoint_onmi.h>
+#include <uORB/topics/pos_onmi.h>
 
 #include<lib/ladrc/ladrc.hpp>
 
@@ -95,6 +96,7 @@ class FauavCtrl : public ModuleBase<FauavCtrl>, public ModuleParams, public px4:
 		uORB::Subscription 			_ctrl_mode_sub {ORB_ID(vehicle_control_mode)};
 		uORB::Subscription 			_land_detected_sub {ORB_ID(vehicle_land_detected)};
 		uORB::Subscription 			_manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};	/**< manual control setpoint subscription */
+		uORB::Subscription 			_pos_onmi_sub {ORB_ID(pos_onmi)};
 		//Outputs
 		uORB::Publication<torque_sp_s> 		 _torque_sp_pub{ORB_ID(torque_sp)};//torque_onmi
 		uORB::Publication<thrust_sp_s> 		 _thrust_sp_pub{ORB_ID(thrust_sp)};//thrust_onmi

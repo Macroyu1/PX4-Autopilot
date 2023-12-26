@@ -311,12 +311,12 @@ void MulticopterPositionControl::Run()
 
 	perf_begin(_cycle_perf);
 	vehicle_local_position_s local_pos;
-
+	// PX4_INFO("local_position  %f %f %f\n\n",(double)local_pos.x,(double)local_pos.y,(double)local_pos.z);
 	if (_local_pos_sub.update(&local_pos)) {
 		const hrt_abstime time_stamp_now = local_pos.timestamp_sample;
 		const float dt = math::constrain(((time_stamp_now - _time_stamp_last_loop) * 1e-6f), 0.002f, 0.04f);
 		_time_stamp_last_loop = time_stamp_now;
-
+		// PX4_INFO("local pos %f %f %f\n\n",(double)local_pos.x,(double)local_pos.y,(double)local_pos.z);
 		// set _dt in controllib Block for BlockDerivative
 		setDt(dt);
 		_in_failsafe = false;
@@ -472,6 +472,11 @@ void MulticopterPositionControl::Run()
 			if (_control.update(dt)) {
 				_failsafe_land_hysteresis.set_state_and_update(false, time_stamp_now);
 
+				// 为Fauav——ctrl更新位置信息
+				pos_onmi_s pos_onmi{};
+				_control.setposonmi(pos_onmi);
+				pos_onmi.timestamp = time_stamp_now;
+				_pos_onmi_pub.publish(pos_onmi);
 			} else {
 				// Failsafe
 				//  do not warn while we are disarmed, as we might not have valid setpoints yet

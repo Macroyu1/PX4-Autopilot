@@ -80,6 +80,7 @@
 #include <lib/MRS/MRS.h>
 #include <uORB/topics/anti_windup.h>
 #include <uORB/topics/ActuatorOptim.h>
+#include <uORB/topics/vehicle_local_position.h>
 
 class ControlAllocator : public ModuleBase<ControlAllocator>, public ModuleParams, public px4::ScheduledWorkItem
 {
@@ -193,6 +194,7 @@ private:
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};		/**< notification of manual control updates */
 	uORB::Subscription _thrust_sp_sub{ORB_ID(thrust_sp)};
 	uORB::Subscription _torque_sp_sub{ORB_ID(torque_sp)};
+	uORB::Subscription 	_pos_sub { ORB_ID(vehicle_local_position)};	/**< vehicle local position */
 	uORB::Publication<anti_windup_s>	_anti_windup_pub{ORB_ID(anti_windup)};
 	uORB::Publication<ActuatorOptim_s>     _act_optim_pub{ORB_ID(ActuatorOptim)};
 	//onmi

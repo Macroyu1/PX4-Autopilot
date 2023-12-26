@@ -92,4 +92,4 @@ control_allocator start
 #
 # Start Multicopter Land Detector.
 #
-land_detector start multicopter
+#land_detector start multicopter
