@@ -66,7 +66,6 @@
 #include <uORB/topics/vehicle_local_position_setpoint.h>
 #include <uORB/topics/thrust_sp.h>
 #include <uORB/topics/anti_windup.h>
-#include <uORB/topics/pos_onmi.h>
 
 using namespace time_literals;
 
@@ -101,7 +100,6 @@ private:
 	uORB::PublicationData<takeoff_status_s>              _takeoff_status_pub {ORB_ID(takeoff_status)};
 	uORB::Publication<vehicle_attitude_setpoint_s>	     _vehicle_attitude_setpoint_pub {ORB_ID(vehicle_attitude_setpoint)};
 	uORB::Publication<vehicle_local_position_setpoint_s> _local_pos_sp_pub {ORB_ID(vehicle_local_position_setpoint)};	/**< vehicle local position setpoint publication */
-	uORB::Publication<pos_onmi_s>			_pos_onmi_pub {ORB_ID(pos_onmi)};
 
 
 	uORB::SubscriptionCallbackWorkItem _local_pos_sub {this, ORB_ID(vehicle_local_position)};	/**< vehicle local position */

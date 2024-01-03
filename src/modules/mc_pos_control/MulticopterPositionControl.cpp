@@ -472,11 +472,7 @@ void MulticopterPositionControl::Run()
 			if (_control.update(dt)) {
 				_failsafe_land_hysteresis.set_state_and_update(false, time_stamp_now);
 
-				// 为Fauav——ctrl更新位置信息
-				pos_onmi_s pos_onmi{};
-				_control.setposonmi(pos_onmi);
-				pos_onmi.timestamp = time_stamp_now;
-				_pos_onmi_pub.publish(pos_onmi);
+
 			} else {
 				// Failsafe
 				//  do not warn while we are disarmed, as we might not have valid setpoints yet

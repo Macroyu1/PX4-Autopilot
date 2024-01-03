@@ -510,7 +510,7 @@ ControlAllocator::alloaction_onmi(const float dt)
 		alpha_d[i] = (alpha[i] * 180) / (float)M_PI;
 		alpha_set[i] = (alpha_d[i] / 90) * 1 + 0;
 
-		// if (i == 3 || i == 4 || i == 5) {alpha_set[i] = -alpha_set[i];} //0/2/4号舵机反方向
+		if (i== 1 || i == 2 || i == 3 ||  i == 5) {alpha_set[i] = -alpha_set[i];} //0/2/4号舵机反方向
 	}
 
 	// mrs.Mrs_update(alpha_set,dt).copyTo(alpha_set);//更新MRS模型输出
@@ -519,20 +519,10 @@ ControlAllocator::alloaction_onmi(const float dt)
 
 	for (int i = 0; i < 6; i++) {
 		omega_set[i] = (omega[i] / 1547.392f) + 0 < 0.9f ? (omega[i] / 1547.392f) + 0 : 0.9f;
-/* 		if(alpha_set[i] > 1 || alpha_set[i]<-1)
-		{
-			if(i<=2)
-			{
-				alpha_set[i+3] = alpha_set[i+3] + alpha_set[i];
-			}else{
-				alpha_set[i-3] = alpha_set[i-3] + alpha_set[i];
-			}
-			alpha_set[i] = 0;
-			omega_set[i] = 0;
-		} */
+
 		actuator_motors.control[i] = omega_set[i];
 		// actuator_servos.control[i] = alpha_set[i];
-		actuator_servos.control[i] = -alpha_set[i];
+		actuator_servos.control[i] = alpha_set[i];
 		// actuator_servos.control[i] = 0;
 	}
 
