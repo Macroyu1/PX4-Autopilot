@@ -125,7 +125,7 @@ public:
 		this->h              = dt;
 		this->u_min          = min;
 		this->u_max          = max;
-		LESO(8);
+		LESO(7);
 
 		float kp = this->wc * this->wc;
 		float kd = 2 * this->wc;
@@ -138,19 +138,19 @@ public:
 	float ADRC_Z(const float state_feedback_in,const float state_setpoint_in,const float state_feedback_dot, float dt,const float min,const float max)
 	{
 
-		// this->state_feedback = isvalid(state_feedback_in) ? state_feedback_in : this->state_feedback;
-		// this->state_setpoint = isvalid(state_setpoint_in) ? state_setpoint_in : this->state_setpoint;
-		this->state_feedback = state_feedback_in;
-		this->state_setpoint = state_setpoint_in;
+		this->state_setpoint = isvalid(state_setpoint_in) ? state_setpoint_in : isvalid(this->state_setpoint)?this->state_setpoint:0;
+		this->state_feedback = isvalid(state_feedback_in) ? state_feedback_in : this->state_setpoint;
+		// this->state_feedback = state_feedback_in;
+		// this->state_setpoint = state_setpoint_in;
 		this->h              = dt;
 		this->u_min          = min;
 		this->u_max          = max;
-		LESO(8);
+		LESO(6);
 
 		float kp = this->wc * this->wc;
 		float kd = 2 * this->wc;
 		this->u = kp * (this->state_setpoint - this->z1)  + kd * (state_feedback_dot - this->z2)- this->z3;//
-		this->u0 = this->u /this->b0;
+		this->u0 = this->u / this->b0;
 
 		return Saturation();
 	}

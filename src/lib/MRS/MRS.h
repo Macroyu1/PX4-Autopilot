@@ -30,14 +30,14 @@ public:
 	};
 private:
 	void Setdiftime(const float dif_time){dt = dif_time;};
-	void Saturation(){for(int i = 0;i < 6;i++){sigma_d(i) = (ABS(lamda(i)) < alpha_d_max)? lamda(i) : alpha_d_max;}}
+	void Saturation(){for(int i = 0;i < 6;i++){sigma_d(i) = (ABS(lamda(i)) < alpha_d_max/dt)? lamda(i) : (lamda(i)/ABS(lamda(i)))*alpha_d_max/dt;}}
 
 	float dt;//sample time
 
-	float alpha_d_max = 1.05f/0.7f;
-	float K = 0.5;
-	float Km = 0.45;
-	float Kr = 0.6;
+	float alpha_d_max = 2.05f/0.7f;
+	float K = 0.1;
+	float Km = 0.15;
+	float Kr = 0.2;
 
 	matrix::Vector<float,6> alpha;
 	matrix::Vector<float,6> alpha_d;

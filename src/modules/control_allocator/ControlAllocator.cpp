@@ -512,8 +512,7 @@ ControlAllocator::alloaction_onmi(const float dt)
 
 		if (i== 1 || i == 2 || i == 3 ||  i == 5) {alpha_set[i] = -alpha_set[i];} //0/2/4号舵机反方向
 	}
-
-	// mrs.Mrs_update(alpha_set,dt).copyTo(alpha_set);//更新MRS模型输出
+	mrs.Mrs_update(alpha_set,dt).copyTo(alpha_set);//更新MRS模型输出
 	/////////////////////////////计算电机输出///////////////////////////////////////////
 	float omega_set[6];
 

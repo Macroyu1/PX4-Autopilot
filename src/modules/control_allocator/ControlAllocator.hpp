@@ -197,10 +197,13 @@ private:
 	uORB::Subscription 	_pos_sub { ORB_ID(vehicle_local_position)};	/**< vehicle local position */
 	uORB::Publication<anti_windup_s>	_anti_windup_pub{ORB_ID(anti_windup)};
 	uORB::Publication<ActuatorOptim_s>     _act_optim_pub{ORB_ID(ActuatorOptim)};
+	/////////////////////////////////////////////////////////////////////////////////////////
 	//onmi
 	matrix::Vector3f _torque_sp_onmi;
 	matrix::Vector3f _thrust_sp_onmi;
 
+	matrix::Vector<float,6> last_a;
+	/////////////////////////////////////////////////////////////////////////////////////////
 	manual_control_setpoint_s	_manual_control_setpoint {};	/**< manual control setpoint */
 	ActuatorOptim_s 		act_optim_data {};
 	anti_windup_s 			antiwindup {};
