@@ -1,0 +1,5 @@
+menuconfig MODULES_ATT_CTRL
+  bool "att_ctrl"
+  default n
+  ---help---
+    Enable support for att_ctrl

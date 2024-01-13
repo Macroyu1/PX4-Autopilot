@@ -1,0 +1,5 @@
+menuconfig MODULES_POS_CTRL
+  bool "pos_ctrl"
+  default n
+  ---help---
+    Enable support for pos_ctrl

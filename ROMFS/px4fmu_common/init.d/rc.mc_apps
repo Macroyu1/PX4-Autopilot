@@ -86,8 +86,10 @@ fi
 mc_hover_thrust_estimator start
 flight_mode_manager start
 mc_pos_control start
-servo_ctrl start
-fauav_ctrl start
+#servo_ctrl start
+#fauav_ctrl start
+pos_ctrl start
+att_ctrl start
 control_allocator start
 #
 # Start Multicopter Land Detector.

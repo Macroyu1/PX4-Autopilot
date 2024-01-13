@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include "ladrc.h"
 #include <px4_platform_common/log.h>
 #define ABS(X) (((X) > 0) ? (X) : -(X))
 
@@ -30,9 +31,8 @@ private:
 	float u_min;
 
 	/************扩张状态观测器********************/
-	void LESO(float k)
+	void LESO()
 	{
-		this->w0 = k*this->wc;
 		float beta01 = 3 * this->w0;
 		float beta02 = 3 * this->w0 * this->w0;
 		float beta03 = this->w0 * this->w0 * this->w0;
@@ -83,6 +83,7 @@ public:
 		this->u  = 0;
 		this->u0 = 0;
 	}
+	LADRC(const float wc_in,const float b0_in,const float c20_in);
 	~LADRC() = default;
 
 	void ADRC_Log(bool eso)
@@ -104,14 +105,12 @@ public:
 	float ADRC_Run(const float state_feedback_in,const float state_setpoint_in,const float dt,const float min,const float max)
 	{
 
-		// this->state_feedback = isvalid(state_feedback_in) ? state_feedback_in : this->state_feedback;
-		// this->state_setpoint = isvalid(state_setpoint_in) ? state_setpoint_in : this->state_setpoint;
-		this->state_feedback = state_feedback_in;
-		this->state_setpoint = state_setpoint_in;
+		this->state_setpoint = isvalid(state_setpoint_in) ? state_setpoint_in : isvalid(this->state_setpoint)?this->state_setpoint:0;
+		this->state_feedback = isvalid(state_feedback_in) ? state_feedback_in : this->state_setpoint;
 		this->h              = dt;
 		this->u_min          = min;
 		this->u_max          = max;
-		LESO(5);
+		LESO();
 		LSEF();
 		return Saturation();
 	}
@@ -125,7 +124,7 @@ public:
 		this->h              = dt;
 		this->u_min          = min;
 		this->u_max          = max;
-		LESO(7);
+		LESO();
 
 		float kp = this->wc * this->wc;
 		float kd = 2 * this->wc;
@@ -145,7 +144,7 @@ public:
 		this->h              = dt;
 		this->u_min          = min;
 		this->u_max          = max;
-		LESO(6);
+		LESO();
 
 		float kp = this->wc * this->wc;
 		float kd = 2 * this->wc;

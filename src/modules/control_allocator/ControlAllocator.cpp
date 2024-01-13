@@ -476,7 +476,7 @@ ControlAllocator::alloaction_onmi(const float dt)
 			  };
 	Matrix<float, 12, 6> A0(A_inv);
 	A0.operator *= (100000.0);
-	float u[6] = {_thrust_sp_onmi(0), _thrust_sp_onmi(1),_thrust_sp_onmi(2)+ 15 + _manual_control_setpoint.z*30, _torque_sp_onmi(0), _torque_sp_onmi(1), _torque_sp_onmi(2)};
+	float u[6] = {_thrust_sp_onmi(0), _thrust_sp_onmi(1),_thrust_sp_onmi(2)+ 20 + _manual_control_setpoint.z*30, _torque_sp_onmi(0), _torque_sp_onmi(1), _torque_sp_onmi(2)};
 	Matrix<float, 6, 1> U(u);
 	Matrix<float, 12, 1> A1 = A0.operator * (U);
 	float omega[6], alpha[6];

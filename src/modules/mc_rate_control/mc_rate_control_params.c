@@ -51,7 +51,6 @@
  * @group Multicopter Rate Control
  */
 PARAM_DEFINE_FLOAT(MC_ROLLRATE_P, 0.15f);
-
 /**
  * Roll rate I gain
  *

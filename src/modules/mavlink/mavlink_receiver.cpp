@@ -121,9 +121,9 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 	/**
 	 *
 	**/
-	case MAVLINK_MSG_ID_Opt_Result:
+	/* case MAVLINK_MSG_ID_Opt_Result:
 		handle_message_opt_result(msg);
-		break;
+		break; */
 	case MAVLINK_MSG_ID_COMMAND_LONG:
 		handle_message_command_long(msg);
 		break;
@@ -739,7 +739,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 
 
 /// @brief /////////////////////////////////////////////////////////////////////////////////////////////////////////
-void
+/* void
 MavlinkReceiver::handle_message_opt_result(mavlink_message_t *msg)
 {
 	mavlink_opt_result_t rst;
@@ -753,7 +753,7 @@ MavlinkReceiver::handle_message_opt_result(mavlink_message_t *msg)
 	    PX4_INFO("%f",(double)opt_rst.opt_result[i]);
 	}
 	_opt_result_pub.publish(opt_rst);
-}
+} */
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 uint8_t MavlinkReceiver::handle_request_message_command(uint16_t message_id, float param2, float param3, float param4,
