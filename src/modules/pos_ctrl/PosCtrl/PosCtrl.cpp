@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2024-01-09 15:32:07
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2024-01-13 10:13:37
+ * @LastEditTime: 2024-01-21 16:16:32
  * @FilePath: /PX4-Autopilot/src/modules/pos_ctrl/PosCtrl/PosCtrl.cpp
  * @Description:
  *
@@ -150,13 +150,13 @@ void PosCtrl::_velocityControl(const bool want_takeoff,const float dt)
 		// _thr_sp = vel_error.emult(_gain_vel_p) + _vel_int - _vel_dot.emult(_gain_vel_d);
 		// _thr_sp(1) = (vel_error(1)*2 + _vel_int(1) + _vel_dot(1)*0.5);
 		// _thr_sp(0) = X.ADRC_Run(_vel(0),_vel_sp(0),dt,-10,10);
-		_thr_sp(0) = Y.ADRC_Run(_vel(1),_vel_sp(1),dt,-10,10);
-		_thr_sp(1) = X.ADRC_Run(_vel(0),_vel_sp(0),dt,-10,10);
-		_thr_sp(2) = Z.ADRC_Run(-_vel(2),-_vel_sp(2),dt,0,30);
+		// _thr_sp(0) = Y.ADRC_Run(_vel(1),_vel_sp(1),dt,-10,10);
+		// _thr_sp(1) = X.ADRC_Run(_vel(0),_vel_sp(0),dt,-10,10);
+		_thr_sp(2) = Z.ADRC_Run(-_vel(2),-_vel_sp(2),dt,0,15);
 
 		PX4_INFO("X : %f %f %f\n\n",(double)_vel(0),(double)_vel_sp(0),(double)_thr_sp(0));
 		PX4_INFO("Y : %f %f %f\n\n",(double)_vel(1),(double)_vel_sp(1),(double)_thr_sp(1));
-		// PX4_INFO("Z : %f %f %f\n\n",(double)_vel(2),(double)-_vel_sp(2),(double)_thr_sp(2));
+		PX4_INFO("Z : %f %f %f\n\n",(double)_vel(2),(double)-_vel_sp(2),(double)_thr_sp(2));
 
 		PX4_INFO("error : %f %f %f\n\n",(double)_pos(0)-_pos_sp(0),(double)_pos(1)-_pos_sp(1),(double)_pos(2)-_pos_sp(2));
 	}else{

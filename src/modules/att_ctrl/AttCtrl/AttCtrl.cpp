@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2024-01-09 17:19:12
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2024-01-10 16:39:38
+ * @LastEditTime: 2024-01-23 09:12:49
  * @FilePath: /PX4-Autopilot/src/modules/att_ctrl/AttCtrl/AttCtrl.cpp
  * @Description:
  *
@@ -72,7 +72,7 @@ AttCtrl::setInputSetpoint(const vehicle_attitude_setpoint_s &att_setpoint)
 matrix::Vector3f
 AttCtrl::torque_update(bool takeoff,const matrix::Quatf &q,float roll,float pitch,float yaw,const float dt)
 {
-	static LADRC Phi(1.9,5,6);static LADRC Theta(2.1,5,6);static LADRC Psai(2,3,4);
+	static LADRC Phi(1.9,5,6);static LADRC Theta(2.0,5,6);static LADRC Psai(2,3,4);
 	Vector3f torque,angle,angle_sp;
 	// NED 2 ENU
 	angle(0) = Eulerf(q).phi();
@@ -87,9 +87,9 @@ AttCtrl::torque_update(bool takeoff,const matrix::Quatf &q,float roll,float pitc
 	angle_sp(2) = 0;
 
 	if(takeoff){
-		torque(0) = Phi.ADRC_Run(angle(0),angle_sp(0),dt,-10,10);
-		torque(1) = Theta.ADRC_Run(angle(1),angle_sp(1),dt,-10,10);
-		torque(2) = Psai.ADRC_Run(angle(2),angle_sp(2),dt,-5,5);
+		torque(0) = Phi.ADRC_Run(angle(1),angle_sp(1),dt,-10,10);
+		torque(1) = -Theta.ADRC_Run(angle(0),angle_sp(0),dt,-10,10);
+		// torque(2) = Psai.ADRC_Run(angle(2),angle_sp(2),dt,-5,5);
 		Vector3f error = R2D(angle_sp - angle);
 		// PX4_INFO("Attit/ude error: %f %f\n\n",(double)angle(0),(double)angle(1));
 		// PX4_INFO("Attitude error: %f %f %f\n\n",(double)error(0),(double)error(1),(double)error(2));
@@ -99,7 +99,7 @@ AttCtrl::torque_update(bool takeoff,const matrix::Quatf &q,float roll,float pitc
 		torque(1) = Theta.ADRC_Reset();
 		torque(2) = Psai.ADRC_Reset();
 	}
-	bool log = 0;
+	bool log = 1;
 	if(log){
 		// PX4_INFO("%d\n",takeoff);
 		PX4_INFO("phi %f %f %f\n\n",(double)angle(0),(double)angle_sp(0),(double)torque(0));

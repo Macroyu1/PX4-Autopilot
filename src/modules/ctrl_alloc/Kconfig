@@ -1,5 +1,0 @@
-menuconfig MODULES_FAUAV_CTRL
-  bool "fauav_ctrl"
-  default n
-  ---help---
-    Enable support for fauav_ctrl

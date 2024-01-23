@@ -476,7 +476,7 @@ ControlAllocator::alloaction_onmi(const float dt)
 			  };
 	Matrix<float, 12, 6> A0(A_inv);
 	A0.operator *= (100000.0);
-	float u[6] = {_thrust_sp_onmi(0), _thrust_sp_onmi(1),_thrust_sp_onmi(2)+ 20 + _manual_control_setpoint.z*30, _torque_sp_onmi(0), _torque_sp_onmi(1), _torque_sp_onmi(2)};
+	float u[6] = {_thrust_sp_onmi(0), _thrust_sp_onmi(1),_thrust_sp_onmi(2)+ 10, _torque_sp_onmi(0), _torque_sp_onmi(1), _torque_sp_onmi(2)};
 	Matrix<float, 6, 1> U(u);
 	Matrix<float, 12, 1> A1 = A0.operator * (U);
 	float omega[6], alpha[6];
@@ -536,7 +536,7 @@ ControlAllocator::alloaction_onmi(const float dt)
 	_actuator_motors_pub.publish(actuator_motors);// 输出电机信号;
 
 	publish_anti_windup(windup(alpha_set, omega_set)); //获取anti-windup，并发布消息；
-	bool log = 0;
+	bool log = 1;
 
 	if (log) {
 		PX4_INFO("U:%f %f %f %f %f  %f\n\n", (double)u[0], (double)u[1], (double)u[2], (double)u[3], (double)u[4],
