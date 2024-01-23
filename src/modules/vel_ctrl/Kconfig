@@ -1,5 +1,0 @@
-menuconfig MODULES_VEL_CTRL
-  bool "vel_ctrl"
-  default n
-  ---help---
-    Enable support for vel_ctrl
