@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2024-01-09 17:19:12
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2024-01-09 21:03:30
+ * @LastEditTime: 2024-01-24 15:07:29
  * @FilePath: /PX4-Autopilot/src/modules/att_ctrl/att_ctrl.cpp
  * @Description:
  *
@@ -90,8 +90,20 @@ Att_Ctrl::Run()
 		_control.setInputSetpoint(att_sp);
 
 		const Quatf q{att.q};
-		const Vector3f torque_onmi = _control.torque_update(arm, q, att_sp.roll_body, att_sp.pitch_body,
+
+		fault_s fault{};
+		_fault_sub.update(&fault);
+		Vector3f torque_onmi;
+		if (fault.fault_flag == 1) {
+			torque_onmi = _control.torque_update_fault(arm, q, att_sp.roll_body, att_sp.pitch_body,
 					     att_sp.yaw_body, dt);
+
+		} else {
+			torque_onmi = _control.torque_update(arm, q, att_sp.roll_body, att_sp.pitch_body,
+					     att_sp.yaw_body, dt);
+		}
+
+
 		/* 发布力和力矩Topic消息 */
 		// publishThrustSetpoint_onmi(thrust_onmi, pos.timestamp);
 		publishTorqueSetpoint_onmi(torque_onmi, att.timestamp);

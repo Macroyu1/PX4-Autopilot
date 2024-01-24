@@ -37,6 +37,7 @@ cmake_policy(SET CMP0057 NEW)
 include(px4_list_make_absolute)
 
 set(msg_files
+	fault.msg
 	servos_angel.msg
 	anti_windup.msg
 	ActuatorOptim.msg

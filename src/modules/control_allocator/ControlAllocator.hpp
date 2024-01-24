@@ -81,6 +81,7 @@
 #include <uORB/topics/anti_windup.h>
 #include <uORB/topics/ActuatorOptim.h>
 #include <uORB/topics/vehicle_local_position.h>
+#include <uORB/topics/fault.h>
 
 class ControlAllocator : public ModuleBase<ControlAllocator>, public ModuleParams, public px4::ScheduledWorkItem
 {
@@ -141,6 +142,7 @@ private:
 
 	/// @brief /////////////////////////////////////////////////
 	void alloaction_onmi(const float dt);
+	void alloaction_fault1(const float dt);
 	void publish_anti_windup(matrix::Vector<float,6> uast);
 
 	matrix::Vector<float,6>  windup(const float* alpha,const float* omega);
@@ -197,6 +199,7 @@ private:
 	uORB::Subscription 	_pos_sub { ORB_ID(vehicle_local_position)};	/**< vehicle local position */
 	uORB::Publication<anti_windup_s>	_anti_windup_pub{ORB_ID(anti_windup)};
 	uORB::Publication<ActuatorOptim_s>     _act_optim_pub{ORB_ID(ActuatorOptim)};
+	uORB::Subscription _fault_sub{ORB_ID(fault)};
 	/////////////////////////////////////////////////////////////////////////////////////////
 	//onmi
 	matrix::Vector3f _torque_sp_onmi;

@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2024-01-09 17:19:12
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2024-01-10 16:39:38
+ * @LastEditTime: 2024-01-24 15:08:27
  * @FilePath: /PX4-Autopilot/src/modules/att_ctrl/AttCtrl/AttCtrl.cpp
  * @Description:
  *
@@ -79,9 +79,6 @@ AttCtrl::torque_update(bool takeoff,const matrix::Quatf &q,float roll,float pitc
 	angle(1) = Eulerf(q).theta();
 	angle(2) = -Eulerf(q).psi() + (float)M_PI/2.f;// + M_PI/6.f;
 
-	/* angle_sp(0) = pitch;
-	angle_sp(1) = -roll;
-	angle_sp(2) = -yaw + (float)M_PI/2.f; */
 	angle_sp(0) = 0;
 	angle_sp(1) = 0;
 	angle_sp(2) = 0;
@@ -99,9 +96,36 @@ AttCtrl::torque_update(bool takeoff,const matrix::Quatf &q,float roll,float pitc
 		torque(1) = Theta.ADRC_Reset();
 		torque(2) = Psai.ADRC_Reset();
 	}
+
+	return torque;
+}
+
+matrix::Vector3f
+AttCtrl::torque_update_fault(bool takeoff,const matrix::Quatf &q,float roll,float pitch,float yaw,const float dt)
+{
+	static LADRC Phi(1.9,5,6);static LADRC Theta(2.1,5,6);static LADRC Psai(2,3,4);
+	Vector3f torque,angle,angle_sp;
+	// NED 2 ENU
+	angle(0) = Eulerf(q).phi();
+	angle(1) = Eulerf(q).theta();
+	angle(2) = -Eulerf(q).psi() + (float)M_PI/2.f;// + M_PI/6.f;
+
+	angle_sp(0) = 0;
+	angle_sp(1) = 0;
+	angle_sp(2) = 0;
+
+	if(takeoff){
+		torque(0) = Phi.ADRC_Run(angle(0),angle_sp(0),dt,-10,10);
+		torque(1) = Theta.ADRC_Run(angle(1),angle_sp(1),dt,-10,10);
+		torque(2) = Psai.ADRC_Run(angle(2),angle_sp(2),dt,-5,5);
+		Vector3f error = R2D(angle_sp - angle);
+	}else{
+		torque(0) = Phi.ADRC_Reset();
+		torque(1) = Theta.ADRC_Reset();
+		torque(2) = Psai.ADRC_Reset();
+	}
 	bool log = 0;
 	if(log){
-		// PX4_INFO("%d\n",takeoff);
 		PX4_INFO("phi %f %f %f\n\n",(double)angle(0),(double)angle_sp(0),(double)torque(0));
 		PX4_INFO("theta %f %f %f\n\n",(double)angle(1),(double)angle_sp(1),(double)torque(1));
 	}

@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2023-10-23 08:47:53
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2024-01-09 20:42:31
+ * @LastEditTime: 2024-01-24 15:05:09
  * @FilePath: /PX4-Autopilot/src/modules/att_ctrl/AttCtrl/AttCtrl.hpp
  * @Description:	ADRC control lib for fully-actuated uav.
  *
@@ -63,6 +63,7 @@ public:
 	 * @return {*}			扭矩向量
 	 */
 	matrix::Vector3f torque_update(bool takeoff,const matrix::Quatf &q,float roll,float pitch,float yaw,const float dt);
+	matrix::Vector3f torque_update_fault(bool takeoff,const matrix::Quatf &q,float roll,float pitch,float yaw,const float dt);
 
 	matrix::Vector3f R2D(matrix::Vector3f error);
 

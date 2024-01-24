@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2024-01-09 15:32:07
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2024-01-13 10:13:37
+ * @LastEditTime: 2024-01-24 15:03:29
  * @FilePath: /PX4-Autopilot/src/modules/pos_ctrl/PosCtrl/PosCtrl.cpp
  * @Description:
  *
@@ -125,6 +125,18 @@ PosCtrl::thrust_update(const bool want_takeoff,const float dt)
 
 	return _thr_sp;
 }
+
+matrix::Vector3f
+PosCtrl::thrust_update_fault(const bool want_takeoff,const float dt)
+{
+	_positionControl();
+	// PX4_INFO("%f %f %f\n",(double)_vel_sp(0),(double)_vel_sp(1),(double)_vel_sp(2));
+	_velocityControl_fault(want_takeoff,dt);
+	// PX4_INFO("thr_sp : %f %f %f\n",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
+
+	return _thr_sp;
+}
+
 void PosCtrl::_positionControl()
 {
 	// P-position controller
@@ -154,16 +166,37 @@ void PosCtrl::_velocityControl(const bool want_takeoff,const float dt)
 		_thr_sp(1) = X.ADRC_Run(_vel(0),_vel_sp(0),dt,-10,10);
 		_thr_sp(2) = Z.ADRC_Run(-_vel(2),-_vel_sp(2),dt,0,30);
 
-		PX4_INFO("X : %f %f %f\n\n",(double)_vel(0),(double)_vel_sp(0),(double)_thr_sp(0));
-		PX4_INFO("Y : %f %f %f\n\n",(double)_vel(1),(double)_vel_sp(1),(double)_thr_sp(1));
+		// PX4_INFO("X : %f %f %f\n\n",(double)_vel(0),(double)_vel_sp(0),(double)_thr_sp(0));
+		// PX4_INFO("Y : %f %f %f\n\n",(double)_vel(1),(double)_vel_sp(1),(double)_thr_sp(1));
 		// PX4_INFO("Z : %f %f %f\n\n",(double)_vel(2),(double)-_vel_sp(2),(double)_thr_sp(2));
 
-		PX4_INFO("error : %f %f %f\n\n",(double)_pos(0)-_pos_sp(0),(double)_pos(1)-_pos_sp(1),(double)_pos(2)-_pos_sp(2));
+		// PX4_INFO("error : %f %f %f\n\n",(double)_pos(0)-_pos_sp(0),(double)_pos(1)-_pos_sp(1),(double)_pos(2)-_pos_sp(2));
 	}else{
 		_thr_sp.setZero();
 		X.ADRC_Reset();
 		Y.ADRC_Reset();
 		Z.ADRC_Reset();
+	}
+}
+
+void PosCtrl::_velocityControl_fault(const bool want_takeoff,const float dt)
+{
+	static LADRC X1(0,1,3);static LADRC Y1(0,1,3);static LADRC Z1(3.3,1,6);
+	// ADRC velocity control
+	if(want_takeoff){
+		_thr_sp(0) = Y1.ADRC_Run(_vel(1),_vel_sp(1),dt,-10,10);
+		_thr_sp(1) = X1.ADRC_Run(_vel(0),_vel_sp(0),dt,-10,10);
+		_thr_sp(2) = Z1.ADRC_Run(-_vel(2),-_vel_sp(2),dt,0,30);
+		// PX4_INFO("X : %f %f %f\n\n",(double)_vel(0),(double)_vel_sp(0),(double)_thr_sp(0));
+		// PX4_INFO("Y : %f %f %f\n\n",(double)_vel(1),(double)_vel_sp(1),(double)_thr_sp(1));
+		// PX4_INFO("Z : %f %f %f\n\n",(double)_vel(2),(double)-_vel_sp(2),(double)_thr_sp(2));
+
+		// PX4_INFO("error : %f %f %f\n\n",(double)_pos(0)-_pos_sp(0),(double)_pos(1)-_pos_sp(1),(double)_pos(2)-_pos_sp(2));
+	}else{
+		_thr_sp.setZero();
+		X1.ADRC_Reset();
+		Y1.ADRC_Reset();
+		Z1.ADRC_Reset();
 	}
 }
 

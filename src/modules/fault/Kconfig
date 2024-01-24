@@ -1,0 +1,5 @@
+menuconfig MODULES_FAULT
+  bool "fault"
+  default n
+  ---help---
+    Enable support for fault

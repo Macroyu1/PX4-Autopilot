@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2023-10-23 08:47:53
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2024-01-10 17:06:02
+ * @LastEditTime: 2024-01-24 15:02:55
  * @FilePath: /PX4-Autopilot/src/modules/pos_ctrl/PosCtrl/PosCtrl.hpp
  * @Description:	ADRC control lib for fully-actuated uav.
  *
@@ -94,6 +94,7 @@ public:
 	 * @return {*}			推力向量
 	 */
 	matrix::Vector3f thrust_update(const bool want_takeoff,const float dt);
+	matrix::Vector3f thrust_update_fault(const bool want_takeoff,const float dt);
 
 	matrix::Vector3f R2D(matrix::Vector3f error);
 
@@ -101,6 +102,7 @@ public:
 
 	void _positionControl();///< Position proportional control
 	void _velocityControl(const bool want_takeoff,const float dt); ///< Velocity PID control
+	void _velocityControl_fault(const bool want_takeoff,const float dt); ///< Velocity PID control
 	void _accelerationControl(); ///< Acceleration setpoint processing
 	void Reset();
 

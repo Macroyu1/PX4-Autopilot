@@ -2,8 +2,8 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2023-10-18 14:35:25
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2023-12-26 16:32:26
- * @FilePath: /PX4-Autopilot/src/modules/fauav_ctrl/fauav_ctrl.hpp
+ * @LastEditTime: 2024-01-24 14:54:49
+ * @FilePath: /PX4-Autopilot/src/modules/fault/fault.hpp
  * @Description:Control for fully-actuated uav
  *
  * Copyright (c) 2023 by HongYu Fu, All Rights Reserved.
@@ -26,8 +26,9 @@
 #include <uORB/uORB.h>
 #include <perf/perf_counter.h>
 
-#include <FaCtrl.hpp>
 /////////////////////////////////////////////////////
+#include <uORB/topics/vehicle_torque_setpoint.h>
+#include <uORB/topics/vehicle_thrust_setpoint.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/vehicle_local_position.h>
@@ -39,20 +40,18 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/vehicle_land_detected.h>
-#include <uORB/topics/position_setpoint_onmi.h>
-
-#include<lib/ladrc/ladrc.hpp>
+#include <uORB/topics/fault.h>
 
 
 
 using namespace time_literals;
 
-class FauavCtrl : public ModuleBase<FauavCtrl>, public ModuleParams, public px4::ScheduledWorkItem
+class FAULT : public ModuleBase<FAULT>, public ModuleParams, public px4::ScheduledWorkItem
 {
 	public:
-		FauavCtrl();
+		FAULT();
 
-		virtual ~FauavCtrl();
+		virtual ~FAULT();
 
 		/** @see ModuleBase */
 		static int task_spawn(int argc, char *argv[]);
@@ -69,26 +68,10 @@ class FauavCtrl : public ModuleBase<FauavCtrl>, public ModuleParams, public px4:
 	private:
 		void Run() override;
 
-		FaCtrl _control; /** 创建FaCtrl类的实例*/
-
-		/**
-		 * @description: 发布扭矩设定点话题
-		 * @param {Vector3f} &torque_sp
-		 * @param {hrt_abstime} &timestamp_sample
-		 * @return {*}
-		 */
-		void publishTorqueSetpoint_onmi(const matrix::Vector3f &torque_sp,const hrt_abstime &timestamp_sample);
-
-		/**
-		 * @description: 发布推力设定点话题
-		 * @param {Vector3f} &thrust_sp
-		 * @param {hrt_abstime} &timestamp_sample
-		 * @return {*}
-		 */
-		void publishThrustSetpoint_onmi(const matrix::Vector3f &thrust_sp,const hrt_abstime &timestamp_sample);
 
 		//Inputs
-		uORB::SubscriptionCallbackWorkItem 	_pos_sub {this, ORB_ID(vehicle_local_position)};	/**< vehicle local position */
+		uORB::SubscriptionCallbackWorkItem _vehicle_torque_setpoint_sub{this, ORB_ID(vehicle_torque_setpoint)};  /**< vehicle torque setpoint subscription */
+		uORB::SubscriptionCallbackWorkItem _vehicle_thrust_setpoint_sub{this, ORB_ID(vehicle_thrust_setpoint)};	 /**< vehicle thrust setpoint subscription */
 		uORB::Subscription 			_att_sub{ORB_ID(vehicle_attitude)};
 		uORB::Subscription 			_att_sp_sub{ORB_ID(vehicle_attitude_setpoint)};  /**< vehicle attitude setpoint subscription */
 		uORB::Subscription 			_pos_sp_sub{ORB_ID(vehicle_local_position_setpoint)};
@@ -96,17 +79,8 @@ class FauavCtrl : public ModuleBase<FauavCtrl>, public ModuleParams, public px4:
 		uORB::Subscription 			_land_detected_sub {ORB_ID(vehicle_land_detected)};
 		uORB::Subscription 			_manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};	/**< manual control setpoint subscription */
 		//Outputs
-		uORB::Publication<torque_sp_s> 		 _torque_sp_pub{ORB_ID(torque_sp)};//torque_onmi
-		uORB::Publication<thrust_sp_s> 		 _thrust_sp_pub{ORB_ID(thrust_sp)};//thrust_onmi
-		uORB::Publication<position_setpoint_onmi_s> 		 _pos_sp_onmi_pub{ORB_ID(position_setpoint_onmi)};//thrust_onmi
-		vehicle_control_mode_s _vehicle_control_mode {};
-		vehicle_land_detected_s _vehicle_land_detected {
-		.timestamp = 0,
-		.freefall = false,
-		.ground_contact = true,
-		.maybe_landed = true,
-		.landed = true,
-		};
+		uORB::Publication<fault_s> 		 _fault_pub{ORB_ID(fault)};//torque_onmi
+
 		// Performance (perf) counters
 		perf_counter_t	_loop_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle")}; /**< loop duration performance counter */
 

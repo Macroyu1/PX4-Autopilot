@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2023-10-18 14:35:25
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2024-01-09 20:45:02
+ * @LastEditTime: 2024-01-24 15:05:56
  * @FilePath: /PX4-Autopilot/src/modules/att_ctrl/att_ctrl.hpp
  * @Description:Control for fully-actuated uav
  *
@@ -40,6 +40,7 @@
 #include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/position_setpoint_onmi.h>
+#include <uORB/topics/fault.h>
 
 #include<lib/ladrc/ladrc.hpp>
 
@@ -100,6 +101,7 @@ class Att_Ctrl : public ModuleBase<Att_Ctrl>, public ModuleParams, public px4::S
 		uORB::Subscription 			_ctrl_mode_sub {ORB_ID(vehicle_control_mode)};
 		uORB::Subscription 			_land_detected_sub {ORB_ID(vehicle_land_detected)};
 		uORB::Subscription 			_manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};	/**< manual control setpoint subscription */
+		uORB::Subscription _fault_sub{ORB_ID(fault)};
 		//Outputs
 		uORB::Publication<torque_sp_s> 		 _torque_sp_pub{ORB_ID(torque_sp)};//torque_onmi
 		uORB::Publication<thrust_sp_s> 		 _thrust_sp_pub{ORB_ID(thrust_sp)};//thrust_onmi

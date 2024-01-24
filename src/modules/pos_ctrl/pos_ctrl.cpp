@@ -159,7 +159,18 @@ Pos_Ctrl::Run()
 
 			_control.setInputSetpoint(pos_sp,manual_sp);
 			_control.setVelocityLimits(_param_mpc_xy_vel_max.get(), _param_mpc_z_vel_max_up.get(), _param_mpc_z_vel_max_dn.get());
-			thrust_onmi = _control.thrust_update(arm,dt);
+
+			fault_s fault{};
+			_fault_sub.update(&fault);
+
+			if (fault.fault_flag == 1) {
+				thrust_onmi = _control.thrust_update_fault(arm,dt);
+
+			} else {
+				thrust_onmi = _control.thrust_update(arm,dt);
+			}
+
+
 
 			/* 发布力和力矩Topic消息 */
 			publishThrustSetpoint_onmi(thrust_onmi, pos.timestamp);

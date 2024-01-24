@@ -411,7 +411,15 @@ ControlAllocator::Run()
 		}
 
 	} else {
-		alloaction_onmi(dt);//全驱动控制分配
+		fault_s fault{};
+		_fault_sub.update(&fault);
+
+		if (fault.fault_flag == 1) {
+			alloaction_fault1(dt);//全驱动控制分配
+
+		} else {
+			alloaction_onmi(dt);//全驱动控制分配
+		}
 	}
 
 
@@ -473,6 +481,128 @@ ControlAllocator::alloaction_onmi(const float dt)
 			   0, -0.0000, 0.1388, -0.8721, 0.5035, 0.5035,
 			   0, -0.2775, 0.0000, -0.0000, -0.0480, -0.0240,
 			   0, 0.0000, 0.1388, -0.0000, 1.0070, -0.5035
+			  };
+	Matrix<float, 12, 6> A0(A_inv);
+	A0.operator *= (100000.0);
+	float u[6] = {_thrust_sp_onmi(0), _thrust_sp_onmi(1),_thrust_sp_onmi(2)+ 20 + _manual_control_setpoint.z*30, _torque_sp_onmi(0), _torque_sp_onmi(1), _torque_sp_onmi(2)};
+	Matrix<float, 6, 1> U(u);
+	Matrix<float, 12, 1> A1 = A0.operator * (U);
+	float omega[6], alpha[6];
+	bool optim_flag = 0;
+	float omega_max = 813;
+
+	for (int i = 0; i < 6; i++) {
+		omega[i] = sqrt(sqrt(powf(A1(2 * i, 0), 2.0) + powf(A1(2 * i + 1, 0), 2.0)));
+		alpha[i] = atan2f(A1(2 * i, 0), A1(2 * i + 1, 0));
+
+		if (omega[i] > omega_max) {optim_flag = 1;}
+	}
+
+	//PX4_INFO("U = %f %f %f %f %f %f\n\n",(double)U(0,0),(double)U(1,0),(double)U(2,0),(double)U(3,0),(double)U(4,0),(double)U(5,0));
+	act_optim_data.flag = optim_flag;
+
+	//PX4_INFO("%f  %f  %f %f %f %f\n\n",(double)act_optim_data.xn[0],(double)act_optim_data.xn[1],(double)act_optim_data.xn[2]
+	//,(double)act_optim_data.xn[3],(double)act_optim_data.xn[4],(double)act_optim_data.xn[5]);
+	for (int i = 0; i < 12; i++) {
+		act_optim_data.controls[i] = A1(i, 0);
+	}
+
+	//PX4_INFO("%f  %f  %f\n\n",(double)act_optim_data.xn[0],(double)act_optim_data.xn[1],(double)act_optim_data.xn[2]);
+	//_act_optim_pub.publish(act_optim_data);
+
+	/////////////////////////////计算舵机输出///////////////////////////////////////////
+	float alpha_d[6], alpha_set[6];
+	MRS mrs;
+
+	for (int i = 0; i < 6; i++) {
+		alpha_d[i] = (alpha[i] * 180) / (float)M_PI;
+		alpha_set[i] = (alpha_d[i] / 90) * 1 + 0;
+
+		if (i== 1 || i == 2 || i == 3 ||  i == 5) {alpha_set[i] = -alpha_set[i];} //0/2/4号舵机反方向
+	}
+	mrs.Mrs_update(alpha_set,dt).copyTo(alpha_set);//更新MRS模型输出
+	/////////////////////////////计算电机输出///////////////////////////////////////////
+	float omega_set[6];
+
+	for (int i = 0; i < 6; i++) {
+		omega_set[i] = (omega[i] / 1547.392f) + 0 < 0.9f ? (omega[i] / 1547.392f) + 0 : 0.9f;
+
+		actuator_motors.control[i] = omega_set[i];
+		// actuator_servos.control[i] = alpha_set[i];
+		actuator_servos.control[i] = alpha_set[i];
+		// actuator_servos.control[i] = 0;
+	}
+
+	actuator_motors.control[6] = 0; actuator_motors.control[7] = 0;
+	actuator_servos.control[6] = 0; actuator_servos.control[7] = 0;
+
+	////////////////////////////////电机转速优化///////////////////////////////////////////
+	_act_optim_pub.publish(act_optim_data);//发布优化信息
+
+	/////////////////////////////发布电机和舵机输出///////////////////////////////////////////
+	_actuator_servos_pub.publish(actuator_servos);// 发布舵机信号;
+	_actuator_motors_pub.publish(actuator_motors);// 输出电机信号;
+
+	publish_anti_windup(windup(alpha_set, omega_set)); //获取anti-windup，并发布消息；
+	bool log = 0;
+
+	if (log) {
+		PX4_INFO("U:%f %f %f %f %f  %f\n\n", (double)u[0], (double)u[1], (double)u[2], (double)u[3], (double)u[4],
+			 (double)u[5]);
+		PX4_INFO("w:%f %f %f %f %f %f\n\n", (double)actuator_motors.control[0], (double)actuator_motors.control[1],
+			 (double)actuator_motors.control[2],
+			 (double)actuator_motors.control[3], (double)actuator_motors.control[4], (double)actuator_motors.control[5]);
+		PX4_INFO("a:%f %f %f %f %f %f\n\n", (double)actuator_servos.control[0], (double)actuator_servos.control[1],
+			 (double)actuator_servos.control[2],
+			 (double)actuator_servos.control[3], (double)actuator_servos.control[4], (double)actuator_servos.control[5]);
+	}
+}
+
+void
+ControlAllocator::alloaction_fault1(const float dt)
+{
+	//******************************************************全驱动控制分配*****************************************************************
+	//PX4_INFO("Start fully-actuated allocation!!!\n\n");
+	////////////////////////////////////////////开始控制分配//////////////////////////////////
+	actuator_motors_s actuator_motors;
+	actuator_motors.timestamp = hrt_absolute_time();
+	actuator_motors.timestamp_sample = _timestamp_sample;
+
+	actuator_servos_s actuator_servos;
+	actuator_servos.timestamp = actuator_motors.timestamp;
+	actuator_servos.timestamp_sample = _timestamp_sample;
+
+	//const hrt_abstime now = hrt_absolute_time();
+	//const float dt = math::constrain(((now - _last_run) / 1e6f), 0.0002f, 0.02f);
+	// 更新力和力矩
+	torque_sp_s			torque_onmi_sp ;
+	thrust_sp_s			thrust_onmi_sp ;
+	_manual_control_setpoint_sub.update(&_manual_control_setpoint);//更新遥控器通道值
+
+	// Run allocator on torque changes
+	if (_torque_sp_sub.update(&torque_onmi_sp)) {
+		_torque_sp_onmi = matrix::Vector3f(torque_onmi_sp.xyz);
+		_timestamp_sample = torque_onmi_sp.timestamp_sample;
+	}
+
+	// Also run allocator on thrust setpoint changes if the torque setpoint
+	// has not been updated for more than 5ms
+	if (_thrust_sp_sub.update(&thrust_onmi_sp)) {
+		_thrust_sp_onmi = matrix::Vector3f(thrust_onmi_sp.xyz);
+	}
+
+	float A_inv[72] = {0.0000, -0.0000, -0.0000, -0.0000, -0.0000, -0.0000,
+			   -0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+			   0.3005, 0.1041, 0.0016, 0.0415, 0.0360, -0.0240,
+			   -0.0057, 0.0033, 0.2081, 1.3086, -0.2526, -0.2515,
+			   0.0600, -0.3122, 0.0049, 0.0206, 0.0719, 0.0359,
+			   -0.0086, 0.0050, 0.2082, 0.4375, -0.7561, 0.7561,
+			   -0.3602, 0.2080, -0.0033, -0.0416, 0.0001, -0.0240,
+			   0.0114, -0.0066, 0.0006, -1.7422, -1.0036, -1.0058,
+			   0.3008, 0.1039, -0.0049, -0.0830, -0.0359, 0.0000,
+			   0.0000, -0.0000, 0.2079, -0.4375, 0.7544, 0.7544,
+			   0.0605, -0.3125, -0.0082, -0.0622, -0.0718, -0.0599,
+			   0.0029, -0.0017, 0.2078, 0.4336, 1.2579, -0.2532
 			  };
 	Matrix<float, 12, 6> A0(A_inv);
 	A0.operator *= (100000.0);

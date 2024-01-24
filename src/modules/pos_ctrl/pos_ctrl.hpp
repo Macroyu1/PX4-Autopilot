@@ -2,7 +2,7 @@
  * @Author: Macroyu1 1628343763@qq.com
  * @Date: 2023-10-18 14:35:25
  * @LastEditors: Macroyu1 1628343763@qq.com
- * @LastEditTime: 2024-01-10 17:02:01
+ * @LastEditTime: 2024-01-24 15:06:44
  * @FilePath: /PX4-Autopilot/src/modules/pos_ctrl/pos_ctrl.hpp
  * @Description:Control for fully-actuated uav
  *
@@ -45,7 +45,7 @@
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/position_setpoint_onmi.h>
 #include <uORB/topics/hover_thrust_estimate.h>
-
+#include <uORB/topics/fault.h>
 
 
 
@@ -113,6 +113,7 @@ class Pos_Ctrl : public ModuleBase<Pos_Ctrl>, public ModuleParams, public contro
 		uORB::Subscription 			_hover_thrust_estimate_sub {ORB_ID(hover_thrust_estimate)};
 		uORB::Subscription 			_trajectory_setpoint_sub {ORB_ID(trajectory_setpoint)};
 		uORB::Subscription 			_vehicle_constraints_sub {ORB_ID(vehicle_constraints)};
+		uORB::Subscription _fault_sub{ORB_ID(fault)};
 		//Outputs
 		uORB::Publication<torque_sp_s> 		 _torque_sp_pub{ORB_ID(torque_sp)};//torque_onmi
 		uORB::Publication<thrust_sp_s> 		 _thrust_sp_pub{ORB_ID(thrust_sp)};//thrust_onmi
